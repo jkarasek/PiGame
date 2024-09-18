@@ -1,5 +1,6 @@
 import pygame as pg
 import nltk
+import time
 from pygame import font
 from nltk.tokenize import word_tokenize
 class PiGame:
@@ -43,6 +44,11 @@ class PiGame:
         self.digit_multipliers = [1, 10, 50, 100, 1000]
         self.digit_multiplier_counter = 1
         self.start_digit_counter = 1
+
+        # Training screen
+        self.switch_position = 1
+        self.keys_layout = 0
+        self.digit_counter = 1
 
 
     # Main screen initialization
@@ -101,7 +107,6 @@ class PiGame:
     def draw_pi_digits(self):
         # Loading digits (list)
         pi_digits = self.read_pi_digits()
-        # pi_digits = ''.join(pi_digits)  # Convert list of characters back to string
 
         # Start (main) value of bottom digits counter
         self.digits_on_page_counter_bottom = 1
@@ -155,7 +160,6 @@ class PiGame:
             self.screen.blit(text, rect)
 
     def screens_objects(self):
-
         ### Text displayed
         # Main screen
         self.learning_button_text = self.cambria_35_font.render("Learning", True, 'white')
@@ -181,7 +185,7 @@ class PiGame:
 
         # Training screen
         self.switch_keys_layout_text = self.calibri_40_font.render("Switch the keys layout", True, 'white')
-        self.hint_text = self.calibri_40_font.render("Show hint after: x seconds", True, 'white')
+        self.hint_text = self.calibri_40_font.render("Hint after: x seconds", True, 'white')
         self.your_time_text = self.candara_72_font.render("Your time:", True, 'white')
         self.t_s_back_button_text = self.t_s_s_back_button_text
 
@@ -287,25 +291,88 @@ class PiGame:
 
         # Training screen (rectangles)
         self.guessing_rect = pg.Rect(self.screen_width * 0.06, self.screen_height * 0.1,    # Position
-                                     self.screen_width * 0.8, self.screen_height * 0.1)       # Size)
+                                     self.screen_width * 0.88, self.screen_height * 0.12)       # Size)
 
-        self.switch_keys_layout_rect = pg.Rect(self.guessing_rect.left, self.guessing_rect.bottom + self.guessing_rect.height,
-                                               self.screen_width * 0.3, self.screen_height * 0.1)
+        self.switch_keys_layout_rect = pg.Rect(self.guessing_rect.left, self.guessing_rect.bottom + self.guessing_rect.height * 0.7,
+                                               self.screen_width * 0.24, self.screen_height * 0.12)
 
-        self.hint_rect = pg.Rect(self.guessing_rect.left, self.switch_keys_layout_rect.bottom + self.switch_keys_layout_rect.height,
-                                            self.screen_width * 0.3, self.screen_height * 0.1)
+        self.hint_rect = pg.Rect(self.guessing_rect.left, self.switch_keys_layout_rect.bottom + self.switch_keys_layout_rect.height * 0.4,
+                                            self.screen_width * 0.24, self.screen_height * 0.12)
 
-        # self.guessing_text_rect = self.gue
+
         self.switch_keys_layout_text_rect = self.switch_keys_layout_text.get_rect(center=self.switch_keys_layout_rect.center)
         self.hint_text_rect = self.hint_text.get_rect(center=self.hint_rect.center)
 
-
         # Training screen (buttons)
-        self.t_s_back_button_rect = pg.Rect(self.guessing_rect.right - self.screen_width * 0.16,                                                         # Position X
-                                            self.hint_rect.bottom + self.hint_rect.height,                                         # Position Y
-                                            self.screen_width * 0.16, self.screen_height * 0.1)                                                         # Size
+        self.t_s_back_button_rect = pg.Rect(self.guessing_rect.right - self.screen_width * 0.24,         # Position X
+                                            self.hint_rect.bottom + self.hint_rect.height * 0.4,         # Position Y
+                                            self.screen_width * 0.24, self.screen_height * 0.12)         # Size
 
         self.t_s_back_button_text_rect = self.t_s_back_button_text.get_rect(center=self.t_s_back_button_rect.center)
+
+        self.your_time_rect = self.your_time_text.get_rect(
+            center=(self.t_s_back_button_rect.centerx, self.switch_keys_layout_rect.centery)
+        )
+
+        # Keys layout options
+        if self.keys_layout == 0:
+            self.square_1_y_pos = self.switch_keys_layout_rect.y
+            self.square_7_y_pos = self.t_s_back_button_rect.y
+        elif self.keys_layout == 1:
+            self.square_1_y_pos = self.t_s_back_button_rect.y
+            self.square_7_y_pos = self.switch_keys_layout_rect.y
+
+            # Squares with digits
+        self.square_0_rect = pg.Rect(self.guessing_rect.centerx - 0.06 * self.screen_height,                # Position X
+                                     self.t_s_back_button_rect.bottom + self.t_s_back_button_rect.height * 0.4,   # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_1_rect = pg.Rect(self.square_0_rect.left - self.square_0_rect.width - self.guessing_rect.height * 0.5,             # Position X
+                                     self.square_1_y_pos,                # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_2_rect = pg.Rect(self.square_0_rect.x,                                                  # Position X
+                                     self.square_1_rect.y,                                                  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_3_rect = pg.Rect(self.square_0_rect.left + self.square_0_rect.width + self.guessing_rect.height * 0.5,             # Position X
+                                     self.square_1_rect.y,                                                  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_4_rect = pg.Rect(self.square_1_rect.x,                                                  # Position X
+                                     self.hint_rect.y,                                                      # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_5_rect = pg.Rect(self.square_2_rect.x,                                                  # Position X
+                                     self.square_4_rect.y,                                                  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_6_rect = pg.Rect(self.square_3_rect.x,                                                  # Position X
+                                     self.square_4_rect.y,                                                  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_7_rect = pg.Rect(self.square_1_rect.x,                                                  # Position X
+                                     self.square_7_y_pos,                                           # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_8_rect = pg.Rect(self.square_2_rect.x,                                                  # Position X
+                                     self.square_7_rect.y,                                                  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_9_rect = pg.Rect(self.square_3_rect.x,                                                  # Position X
+                                     self.square_7_rect.y,                                                  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+
+        self.square_0_text_rect = self.square_0_text.get_rect(center=self.square_0_rect.center)
+        self.square_1_text_rect = self.square_1_text.get_rect(center=self.square_1_rect.center)
+        self.square_2_text_rect = self.square_2_text.get_rect(center=self.square_2_rect.center)
+        self.square_3_text_rect = self.square_3_text.get_rect(center=self.square_3_rect.center)
+        self.square_4_text_rect = self.square_4_text.get_rect(center=self.square_4_rect.center)
+        self.square_5_text_rect = self.square_5_text.get_rect(center=self.square_5_rect.center)
+        self.square_6_text_rect = self.square_6_text.get_rect(center=self.square_6_rect.center)
+        self.square_7_text_rect = self.square_7_text.get_rect(center=self.square_7_rect.center)
+        self.square_8_text_rect = self.square_8_text.get_rect(center=self.square_8_rect.center)
+        self.square_9_text_rect = self.square_9_text.get_rect(center=self.square_9_rect.center)
 
         ### Counters rectangles
         # Learning screen
@@ -343,6 +410,10 @@ class PiGame:
 
         self.t_s_minus_image = pg.transform.scale(minus_image, (self.screen_width * 0.06, self.screen_width * 0.06))
         self.t_s_plus_image = pg.transform.scale(plus_image, (self.screen_width * 0.06, self.screen_width * 0.06))
+
+        self.switch_on_image = pg.transform.scale(switch_on_image, (self.screen_width * 0.06, self.screen_width * 0.03))
+        self.switch_off_image = pg.transform.scale(switch_off_image, (self.screen_width * 0.06, self.screen_width * 0.03))
+        self.switch_neutral_image = pg.transform.scale(switch_neutral_image, (self.screen_width * 0.06, self.screen_width * 0.03))
 
         ### Images rectangles
         # Learning screen
@@ -383,11 +454,21 @@ class PiGame:
 
         # Training screen
         self.hint_minus = self.t_s_minus_image.get_rect(
-            center=(self.hint_rect.centerx - 80, self.hint_rect.bottom + self.hint_rect.height)
+            center=(self.hint_rect.centerx - (self.hint_rect.width * 0.5) + self.screen_width * 0.03, self.hint_rect.bottom + self.hint_rect.height * 0.7)
         )
         self.hint_plus = self.t_s_plus_image.get_rect(
-            center=(self.hint_rect.centerx, self.hint_rect.bottom + self.hint_rect.height)
+            center=(self.hint_rect.centerx, self.hint_rect.bottom + self.hint_rect.height * 0.7)
         )
+        self.switch_on = self.switch_on_image.get_rect(
+            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03, self.hint_rect.bottom + self.hint_rect.height * 0.7)
+        )
+        self.switch_off = self.switch_off_image.get_rect(
+            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03, self.hint_rect.bottom + self.hint_rect.height * 0.7)
+        )
+        self.switch_neutral = self.switch_neutral_image.get_rect(
+            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03, self.hint_rect.bottom + self.hint_rect.height * 0.7)
+        )
+
 
 
     def learning_screen_logic(self):
@@ -612,13 +693,41 @@ class PiGame:
         training_running = True
         self.screens_objects()
 
+        start_time = time.time()  # Start time initialization
+        self.user_input = []
+        self.incorrect_square_number = None
+
+
 
         while training_running:
             self.screen.fill((39, 39, 39))  # Dark gray color
 
+            # Time calculation
+            elapsed_time = time.time() - start_time
+            formatted_time = time.strftime('%M:%S', time.gmtime(elapsed_time))  # Time formatted to MM:SS
+
+            # Time rendering
+            time_text = self.calibri_72_font.render(f"{formatted_time}", True, 'white')
+            time_rect = time_text.get_rect(center=(self.your_time_rect.centerx, self.your_time_rect.bottom + self.your_time_rect.height * 0.7))
+            self.screen.blit(time_text, time_rect)
+
             # Images drawing on the screen
             self.screen.blit(self.t_s_minus_image, self.hint_minus)
             self.screen.blit(self.t_s_plus_image, self.hint_plus)
+
+            if self.switch_position == 0:
+                time.sleep(0.1)
+                self.screen.blit(self.switch_off_image, self.switch_off)
+            elif self.switch_position == 1:
+                time.sleep(0.1)
+                self.screen.blit(self.switch_on_image, self.switch_on)
+
+            # Drawing text
+            digits_str = "".join(self.user_input)
+            guessed_digits_text = self.calibri_72_font.render(f"{digits_str}", True, 'white')
+            self.guessing_text_rect = guessed_digits_text.get_rect(center=self.guessing_rect.center)
+            self.screen.blit(self.your_time_text, self.your_time_rect)
+            self.screen.blit(guessed_digits_text, self.guessing_text_rect)
 
             # Drawing rectangles
             pg.draw.rect(self.screen, 'white', self.guessing_rect, width=3)
@@ -629,9 +738,21 @@ class PiGame:
             self.screen.blit(self.hint_text, self.hint_text_rect)
 
             # Drawing buttons
-            pg.draw.rect(self.screen, 'white', self.t_s_back_button_rect, 5)
+            pg.draw.rect(self.screen, 'white', self.t_s_back_button_rect, 3)
 
             self.screen.blit(self.t_s_back_button_text, self.t_s_back_button_text_rect)
+
+
+            # Squares with digits
+            for i in range(10):
+                pg.draw.rect(self.screen, 'white', getattr(self, f'square_{i}_rect'), 5)
+                self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
+
+            if self.incorrect_square_number:
+                i = self.incorrect_square_number
+                pg.draw.rect(self.screen, 'red', getattr(self, f'square_{i}_rect'), 5)
+                self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
+                self.incorrect_square_number = None
 
 
             for event in pg.event.get():
@@ -640,15 +761,83 @@ class PiGame:
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.t_s_back_button_rect.collidepoint(event.pos):
                         return
+                    if self.switch_on.collidepoint(event.pos):
+                        if self.switch_position == 0:
+                            self.screen.blit(self.switch_neutral_image, self.switch_neutral)
+                            self.switch_position = 1
+                        elif self.switch_position == 1:
+                            self.screen.blit(self.switch_neutral_image, self.switch_neutral)
+                            self.switch_position = 0
+                    if self.switch_keys_layout_rect.collidepoint(event.pos):
+                        if self.keys_layout == 0:
+                            self.keys_layout = 1
+                            self.screens_objects()
+                        elif self.keys_layout == 1:
+                            self.keys_layout = 0
+                            self.screens_objects()
 
-
-            # pi_digits = self.read_pi_digits()[:50]
-            # tokens = list(pi_digits.replace(".", ""))
-            # print(tokens)
-            # break
+                    # Squares with digits
+                    if self.square_0_rect.collidepoint(event.pos):
+                        user_input = str(0)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_1_rect.collidepoint(event.pos):
+                        user_input = str(1)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_2_rect.collidepoint(event.pos):
+                        user_input = str(2)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_3_rect.collidepoint(event.pos):
+                        user_input = str(3)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_4_rect.collidepoint(event.pos):
+                        user_input = str(4)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_5_rect.collidepoint(event.pos):
+                        user_input = str(5)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_6_rect.collidepoint(event.pos):
+                        user_input = str(6)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_7_rect.collidepoint(event.pos):
+                        user_input = str(7)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_8_rect.collidepoint(event.pos):
+                        user_input = str(8)
+                        self.t_s_draw_digits(user_input)
+                    if self.square_9_rect.collidepoint(event.pos):
+                        user_input = str(9)
+                        self.t_s_draw_digits(user_input)
 
             pg.display.flip()
             self.clock.tick(60)
+    def t_s_draw_digits(self, user_input):
+        pi_digits = self.read_pi_digits()[:50]
+        pi_tokens = list(pi_digits.replace(".", ""))
+
+        tested_digits = self.user_input + [user_input]
+        tested_token = pi_tokens[:len(self.user_input)+1]
+
+
+        correct = self.compare_tokens(tested_digits, tested_token)
+        if correct:
+            self.user_input.append(user_input)
+            self.digit_counter += 1
+        else:
+            self.incorrect_square_number = user_input
+
+    def compare_tokens(self, user_input, pi_tokens):
+        user_input = list(user_input)
+
+        if len(user_input) != len(pi_tokens):
+            return False
+
+            # Porównaj pełne ciągi znaków
+        for i in range(len(user_input)):
+            if user_input[i] != pi_tokens[i]:
+                return False
+
+        return True
+
     def challenge_screen_settings(self):
         challenge_settings_running = True
         pass
@@ -662,15 +851,11 @@ if __name__ == '__main__':
     game = PiGame()
     game.main_screen()
 
-# Poprawić rozmieszczenie i wymiary rectangli na training screen
-# Wyswietlic klawe
-# Zrobic opcje switcha ulozenia klawy
-# Zrobic wyswietlanie cyfr na gornym prostokacie
+
+# Zrobic wyswietlanie cyfr na gornym prostokacie - DO NAPRAWY
 # Zrobic klikany +,- i on/off switch
-# Zrobic klawe klikalną
-# Zrobic licznik czasu
 # Zrobic funkcjonalne podpowiedzi
-# Zrobic animacje klikania przyciskow
+
 
 
 
