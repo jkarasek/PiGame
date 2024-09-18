@@ -46,6 +46,7 @@ class PiGame:
         self.start_digit_counter = 1
 
         # Training screen
+        self.x_offset = 0
         self.switch_position = 1
         self.keys_layout = 0
         self.digit_counter = 1
@@ -697,6 +698,8 @@ class PiGame:
         self.user_input = []
         self.incorrect_square_number = None
 
+        max_display_digits = 23 # Number of digits visible in guessing_rect
+
 
 
         while training_running:
@@ -723,11 +726,29 @@ class PiGame:
                 self.screen.blit(self.switch_on_image, self.switch_on)
 
             # Drawing text
-            digits_str = "".join(self.user_input)
+                # Digits drawing logic
+            digits_str = "".join(self.user_input[-max_display_digits:])
             guessed_digits_text = self.calibri_72_font.render(f"{digits_str}", True, 'white')
-            self.guessing_text_rect = guessed_digits_text.get_rect(center=self.guessing_rect.center)
+            base_text = self.calibri_72_font.render("3. ", True, 'blue')
+            unknown_signs_text = self.calibri_72_font.render("???????.................................", True, 'yellow')
+
+
+            self.guessed_digits_text_rect = guessed_digits_text.get_rect(center=(self.guessing_rect.centerx - self.x_offset, self.guessing_rect.centery))
+            self.base_text_rect = base_text.get_rect(center=(self.guessed_digits_text_rect.left - 30, self.guessing_rect.centery))
+            unknown_signs_text_rect = unknown_signs_text.get_rect(center=(self.guessing_rect.centerx, self.guessing_rect.centery))
+            self.unknown_signs_text_rect = unknown_signs_text.get_rect(center=(self.guessed_digits_text_rect.right + 0.5 * unknown_signs_text_rect.width, self.guessing_rect.centery))
+
+
+            # pg.draw.rect(self.screen, 'blue', self.unknown_signs_text_rect, width=3)
+            # pg.draw.rect(self.screen, 'red', self.guessed_digits_text_rect, width=3)
+
             self.screen.blit(self.your_time_text, self.your_time_rect)
-            self.screen.blit(guessed_digits_text, self.guessing_text_rect)
+            if len(self.user_input)<22:
+                self.screen.blit(base_text, self.base_text_rect)
+            self.screen.blit(guessed_digits_text, self.guessed_digits_text_rect)
+            self.screen.blit(unknown_signs_text, self.unknown_signs_text_rect)
+
+
 
             # Drawing rectangles
             pg.draw.rect(self.screen, 'white', self.guessing_rect, width=3)
@@ -777,53 +798,30 @@ class PiGame:
                             self.screens_objects()
 
                     # Squares with digits
-                    if self.square_0_rect.collidepoint(event.pos):
-                        user_input = str(0)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_1_rect.collidepoint(event.pos):
-                        user_input = str(1)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_2_rect.collidepoint(event.pos):
-                        user_input = str(2)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_3_rect.collidepoint(event.pos):
-                        user_input = str(3)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_4_rect.collidepoint(event.pos):
-                        user_input = str(4)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_5_rect.collidepoint(event.pos):
-                        user_input = str(5)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_6_rect.collidepoint(event.pos):
-                        user_input = str(6)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_7_rect.collidepoint(event.pos):
-                        user_input = str(7)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_8_rect.collidepoint(event.pos):
-                        user_input = str(8)
-                        self.t_s_draw_digits(user_input)
-                    if self.square_9_rect.collidepoint(event.pos):
-                        user_input = str(9)
-                        self.t_s_draw_digits(user_input)
+                    for i in range(10):
+                        if getattr(self, f'square_{i}_rect').collidepoint(event.pos):
+                            self.t_s_draw_digits(str(i))
 
             pg.display.flip()
             self.clock.tick(60)
     def t_s_draw_digits(self, user_input):
-        pi_digits = self.read_pi_digits()[:50]
+        pi_digits = self.read_pi_digits()[:100]
         pi_tokens = list(pi_digits.replace(".", ""))
 
         tested_digits = self.user_input + [user_input]
-        tested_token = pi_tokens[:len(self.user_input)+1]
+        tested_token = pi_tokens[:len(tested_digits)]
 
 
         correct = self.compare_tokens(tested_digits, tested_token)
         if correct:
             self.user_input.append(user_input)
             self.digit_counter += 1
+            if len(self.user_input)>1 and len(self.user_input)<24:
+                self.x_offset += 18.5
+
         else:
             self.incorrect_square_number = user_input
+
 
     def compare_tokens(self, user_input, pi_tokens):
         user_input = list(user_input)
@@ -831,7 +829,7 @@ class PiGame:
         if len(user_input) != len(pi_tokens):
             return False
 
-            # Porównaj pełne ciągi znaków
+        # Compare full strings
         for i in range(len(user_input)):
             if user_input[i] != pi_tokens[i]:
                 return False
