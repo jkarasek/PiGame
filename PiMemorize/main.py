@@ -1,8 +1,7 @@
 import pygame as pg
-import nltk
 import time
 from pygame import font
-from nltk.tokenize import word_tokenize
+
 class PiGame:
     def __init__(self):
         pg.init()  # Inicjalizacja Pygame
@@ -24,20 +23,25 @@ class PiGame:
         self.candara_60_font = font.SysFont('candara', size=60)
         self.candara_50_font = font.SysFont('candara', size=50)
         self.calibri_72_font =  font.SysFont('calibri', size=72)
+        self.calibri_55_font =  font.SysFont('calibri', size=55)
         self.calibri_40_font = font.SysFont('calibri', size=40)
         self.cambria_35_font = font.SysFont('cambria', size=35)
 
-        ### Counters
+        self.main_values()
+
+
+
+    def main_values(self):
         # Learning screen counter
-        self.digits_in_columns_counter = 5              # Main value
+        self.digits_in_columns_counter = 5  # Main value
 
         self.page_change_multipliers = [1, 2, 5, 10, 100]
-        self.page_change_multiplier_counter = 1         # Main value
+        self.page_change_multiplier_counter = 1  # Main value
 
         self.page_number_counter = 1
 
-        self.digits_on_page_counter_bottom = 1                 # Main value
-        self.digits_on_page_counter_top = 1                    # Main value
+        self.digits_on_page_counter_bottom = 1  # Main value
+        self.digits_on_page_counter_top = 1  # Main value
         self.digits_on_page_counter = 0
 
         # Training screen settings counters
@@ -46,10 +50,11 @@ class PiGame:
         self.start_digit_counter = 1
 
         # Training screen
-        self.x_offset = 0
+        self.digits_display_offset = 30
         self.switch_position = 1
-        self.keys_layout = 0
+        self.keys_layout = 1
         self.digit_counter = 1
+        self.hint_counter = 4
 
 
     # Main screen initialization
@@ -186,7 +191,10 @@ class PiGame:
 
         # Training screen
         self.switch_keys_layout_text = self.calibri_40_font.render("Switch the keys layout", True, 'white')
-        self.hint_text = self.calibri_40_font.render("Hint after: x seconds", True, 'white')
+        if self.switch_position == 0:
+            self.hint_text = self.calibri_40_font.render("Hint after: " + str(self.hint_counter) + " seconds", True, (59, 59, 59))
+        elif self.switch_position == 1:
+            self.hint_text = self.calibri_40_font.render("Hint after: " + str(self.hint_counter) + " seconds", True, 'white')
         self.your_time_text = self.candara_72_font.render("Your time:", True, 'white')
         self.t_s_back_button_text = self.t_s_s_back_button_text
 
@@ -215,6 +223,7 @@ class PiGame:
         # Training screen settings
         self.start_digit_counter_text = self.candara_50_font.render(str(self.start_digit_counter), True, 'white')
         self.digit_multiplier_counter_text = self.candara_50_font.render("x" + str(self.digit_multiplier_counter), True, 'white')
+
 
         ### Rectangles
         # Main screen (buttons)
@@ -294,7 +303,7 @@ class PiGame:
         self.guessing_rect = pg.Rect(self.screen_width * 0.06, self.screen_height * 0.1,    # Position
                                      self.screen_width * 0.88, self.screen_height * 0.12)       # Size)
 
-        self.switch_keys_layout_rect = pg.Rect(self.guessing_rect.left, self.guessing_rect.bottom + self.guessing_rect.height * 0.7,
+        self.switch_keys_layout_rect = pg.Rect(self.guessing_rect.left, self.guessing_rect.bottom + self.guessing_rect.height,
                                                self.screen_width * 0.24, self.screen_height * 0.12)
 
         self.hint_rect = pg.Rect(self.guessing_rect.left, self.switch_keys_layout_rect.bottom + self.switch_keys_layout_rect.height * 0.4,
@@ -398,6 +407,7 @@ class PiGame:
             center=(self.digit_multiplier_rect.centerx, self.digit_multiplier_rect.bottom + self.digit_multiplier_rect.height)
         )
 
+
         # Images
         minus_image = pg.image.load('images/minus.png')
         plus_image = pg.image.load('images/plus.png')
@@ -499,6 +509,7 @@ class PiGame:
 
     def learning_screen(self):
         learning_running = True
+        self.main_values()
         self.learning_screen_logic()
 
         while learning_running:
@@ -608,6 +619,7 @@ class PiGame:
 
     def training_screen_settings(self):
         training_settings_running = True
+        self.main_values()
         self.screens_objects()
 
 
@@ -691,23 +703,27 @@ class PiGame:
             self.clock.tick(60)
 
     def training_screen(self):
+        self.main_values()
         training_running = True
-        self.screens_objects()
 
         start_time = time.time()  # Start time initialization
+        reset_time = time.time()  # Time of last interaction with digit squares
+
         self.user_input = []
         self.incorrect_square_number = None
+        self.next_correct_digit = None  # Initially no digit highlighted
 
-        max_display_digits = 23 # Number of digits visible in guessing_rect
-
+        self.max_display_digits = int(self.guessing_rect.width/37.53) # Number of digits visible in guessing_rect
 
 
         while training_running:
+            self.screens_objects()
             self.screen.fill((39, 39, 39))  # Dark gray color
 
             # Time calculation
-            elapsed_time = time.time() - start_time
-            formatted_time = time.strftime('%M:%S', time.gmtime(elapsed_time))  # Time formatted to MM:SS
+            self.time_to_hint = time.time() - reset_time
+            self.training_elapsed_time = time.time() - start_time
+            formatted_time = time.strftime('%M:%S', time.gmtime(self.training_elapsed_time))  # Time formatted to MM:SS
 
             # Time rendering
             time_text = self.calibri_72_font.render(f"{formatted_time}", True, 'white')
@@ -727,53 +743,65 @@ class PiGame:
 
             # Drawing text
                 # Digits drawing logic
-            digits_str = "".join(self.user_input[-max_display_digits:])
+            digits_str = "".join(self.user_input[-self.max_display_digits:])
             guessed_digits_text = self.calibri_72_font.render(f"{digits_str}", True, 'white')
-            base_text = self.calibri_72_font.render("3. ", True, 'blue')
-            unknown_signs_text = self.calibri_72_font.render("???????.................................", True, 'yellow')
+            base_text = self.calibri_72_font.render("3. ", True, 'green')
+            self.digit_number_text = self.calibri_55_font.render("Digit: " + f"{self.digit_counter + self.start_digit_counter-1}", True, 'white')
 
-
-            self.guessed_digits_text_rect = guessed_digits_text.get_rect(center=(self.guessing_rect.centerx - self.x_offset, self.guessing_rect.centery))
-            self.base_text_rect = base_text.get_rect(center=(self.guessed_digits_text_rect.left - 30, self.guessing_rect.centery))
-            unknown_signs_text_rect = unknown_signs_text.get_rect(center=(self.guessing_rect.centerx, self.guessing_rect.centery))
-            self.unknown_signs_text_rect = unknown_signs_text.get_rect(center=(self.guessed_digits_text_rect.right + 0.5 * unknown_signs_text_rect.width, self.guessing_rect.centery))
-
-
-            # pg.draw.rect(self.screen, 'blue', self.unknown_signs_text_rect, width=3)
-            # pg.draw.rect(self.screen, 'red', self.guessed_digits_text_rect, width=3)
-
+            self.guessed_digits_text_rect = guessed_digits_text.get_rect(center=(self.guessing_rect.right - self.digits_display_offset, self.guessing_rect.centery))
+            self.base_text_rect = base_text.get_rect(center=(self.guessed_digits_text_rect.left - 25, self.guessing_rect.centery))
+            self.digit_number_rect = self.digit_number_text.get_rect(
+                center=(self.guessing_rect.centerx, self.guessing_rect.bottom + 0.4 * self.guessing_rect.height)
+            )
             self.screen.blit(self.your_time_text, self.your_time_rect)
-            if len(self.user_input)<22:
-                self.screen.blit(base_text, self.base_text_rect)
+
+            if len(self.user_input) < self.max_display_digits-1:
+                if self.start_digit_counter == 1:
+                    self.screen.blit(base_text, self.base_text_rect)
             self.screen.blit(guessed_digits_text, self.guessed_digits_text_rect)
-            self.screen.blit(unknown_signs_text, self.unknown_signs_text_rect)
-
-
 
             # Drawing rectangles
             pg.draw.rect(self.screen, 'white', self.guessing_rect, width=3)
             pg.draw.rect(self.screen, 'white', self.switch_keys_layout_rect, width=3)
-            pg.draw.rect(self.screen, 'white', self.hint_rect, width=3)
+
+            if self.switch_position == 0:
+                pg.draw.rect(self.screen, (59, 59, 59), self.hint_rect, width=3)
+            elif self.switch_position == 1:
+                pg.draw.rect(self.screen, 'white', self.hint_rect, width=3)
+
+
 
             self.screen.blit(self.switch_keys_layout_text, self.switch_keys_layout_text_rect)
             self.screen.blit(self.hint_text, self.hint_text_rect)
+            self.screen.blit(self.digit_number_text, self.digit_number_rect)
 
             # Drawing buttons
             pg.draw.rect(self.screen, 'white', self.t_s_back_button_rect, 3)
 
             self.screen.blit(self.t_s_back_button_text, self.t_s_back_button_text_rect)
 
-
             # Squares with digits
             for i in range(10):
-                pg.draw.rect(self.screen, 'white', getattr(self, f'square_{i}_rect'), 5)
-                self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
+                if i == self.next_correct_digit:
+                    pg.draw.rect(self.screen, 'green', getattr(self, f'square_{i}_rect'), 5)
+                    self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
+                else:
+                    pg.draw.rect(self.screen, 'white', getattr(self, f'square_{i}_rect'), 5)
+                    self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
 
+            # Checking if wrong square clicked
             if self.incorrect_square_number:
                 i = self.incorrect_square_number
                 pg.draw.rect(self.screen, 'red', getattr(self, f'square_{i}_rect'), 5)
                 self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
                 self.incorrect_square_number = None
+
+            # Check if time to hint
+            if self.time_to_hint > self.hint_counter:
+                if self.switch_position == 1:
+                    pi_digits = self.read_pi_digits()[self.start_digit_counter - 1:]
+                    self.next_correct_digit = int(pi_digits[len(self.user_input)])  # Set the next correct digit
+                    reset_time = time.time()  # Reset the hint timer
 
 
             for event in pg.event.get():
@@ -789,23 +817,25 @@ class PiGame:
                         elif self.switch_position == 1:
                             self.screen.blit(self.switch_neutral_image, self.switch_neutral)
                             self.switch_position = 0
+                    if self.hint_plus.collidepoint(event.pos) and self.switch_position == 1:
+                        self.hint_counter = min(10, self.hint_counter + 1)
+                    if self.hint_minus.collidepoint(event.pos) and self.switch_position == 1:
+                        self.hint_counter = max(2, self.hint_counter - 1)
                     if self.switch_keys_layout_rect.collidepoint(event.pos):
-                        if self.keys_layout == 0:
-                            self.keys_layout = 1
-                            self.screens_objects()
-                        elif self.keys_layout == 1:
-                            self.keys_layout = 0
-                            self.screens_objects()
+                        self.keys_layout = 1 - self.keys_layout
+                        self.screens_objects()
 
                     # Squares with digits
                     for i in range(10):
                         if getattr(self, f'square_{i}_rect').collidepoint(event.pos):
                             self.t_s_draw_digits(str(i))
+                            reset_time = time.time()
+                            self.next_correct_digit = None
 
             pg.display.flip()
             self.clock.tick(60)
     def t_s_draw_digits(self, user_input):
-        pi_digits = self.read_pi_digits()[:100]
+        pi_digits = self.read_pi_digits()[self.start_digit_counter-1:]
         pi_tokens = list(pi_digits.replace(".", ""))
 
         tested_digits = self.user_input + [user_input]
@@ -816,8 +846,8 @@ class PiGame:
         if correct:
             self.user_input.append(user_input)
             self.digit_counter += 1
-            if len(self.user_input)>1 and len(self.user_input)<24:
-                self.x_offset += 18.5
+            if len(self.user_input)>1 and len(self.user_input)<self.max_display_digits+1:
+                self.digits_display_offset += 18.5
 
         else:
             self.incorrect_square_number = user_input
@@ -849,10 +879,9 @@ if __name__ == '__main__':
     game = PiGame()
     game.main_screen()
 
-
-# Zrobic wyswietlanie cyfr na gornym prostokacie - DO NAPRAWY
-# Zrobic klikany +,- i on/off switch
-# Zrobic funkcjonalne podpowiedzi
+# Zająć się challenge screenem
+# Zaplanować jak ma wyglądać
+# Zacząć coś pisać
 
 
 
