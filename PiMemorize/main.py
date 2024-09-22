@@ -22,8 +22,8 @@ class PiGame:
         self.candara_72_font = font.SysFont('candara', size=72)
         self.candara_60_font = font.SysFont('candara', size=60)
         self.candara_50_font = font.SysFont('candara', size=50)
-        self.calibri_72_font =  font.SysFont('calibri', size=72)
-        self.calibri_55_font =  font.SysFont('calibri', size=55)
+        self.calibri_72_font = font.SysFont('calibri', size=72)
+        self.calibri_55_font = font.SysFont('calibri', size=55)
         self.calibri_40_font = font.SysFont('calibri', size=40)
         self.cambria_35_font = font.SysFont('cambria', size=35)
 
@@ -32,22 +32,25 @@ class PiGame:
 
 
     def main_values(self):
-        # Learning screen counter
-        self.digits_in_columns_counter = 5  # Main value
+        # Learning screen counters
+        self.digits_in_columns_counter = 5
 
         self.page_change_multipliers = [1, 2, 5, 10, 100]
-        self.page_change_multiplier_counter = 1  # Main value
+        self.page_change_multiplier_counter = 1
 
         self.page_number_counter = 1
 
-        self.digits_on_page_counter_bottom = 1  # Main value
-        self.digits_on_page_counter_top = 1  # Main value
+        self.digits_on_page_counter_bottom = 1
+        self.digits_on_page_counter_top = 1
         self.digits_on_page_counter = 0
 
-        # Training screen settings counters
+        # Screens settings counters ( training and challenge )
         self.digit_multipliers = [1, 10, 50, 100, 1000]
         self.digit_multiplier_counter = 1
         self.start_digit_counter = 1
+
+        self.thinking_time_counter = 5
+        self.mistakes_allowed_counter = 3
 
         # Training screen
         self.digits_display_offset = 30
@@ -56,11 +59,17 @@ class PiGame:
         self.digit_counter = 1
         self.hint_counter = 4
 
+        # Goal counters
+        self.goal_digit_counter = 25
+
+        self.goal_digit_multipliers = [25, 50, 100, 250, 500]
+        self.goal_digit_multiplier_counter = 25
+
 
     # Main screen initialization
     def main_screen(self):
         main_running = True
-        self.screens_objects()
+        self.main_screen_objects()
 
         while main_running:
             self.screen.fill('black')
@@ -153,7 +162,7 @@ class PiGame:
                 self.digits_on_page_counter_top = self.page_number_counter * self.digits_on_page_counter
 
                 # Digits in page counter drawing
-                self.screens_objects()
+                self.learning_screen_objects()
                 self.screen.blit(self.digits_on_page_counter_text, self.digits_on_page_counter_rect)
                 break
 
@@ -165,118 +174,169 @@ class PiGame:
             # Text drawing
             self.screen.blit(text, rect)
 
-    def screens_objects(self):
-        ### Text displayed
-        # Main screen
+    def images_initialization(self):
+
+        minus_image = pg.image.load('images/minus.png')
+        plus_image = pg.image.load('images/plus.png')
+        switch_on_image = pg.image.load('images/switch_on.png')
+        switch_off_image = pg.image.load('images/switch_off.png')
+        switch_neutral_image = pg.image.load('images/switch_neutral.png')
+        heart_image = pg.image.load('images/heart.png')
+
+        # Scaling images
+        self.minus_image = pg.transform.scale(minus_image, (self.screen_width * 0.035, self.screen_width * 0.035))
+        self.plus_image = pg.transform.scale(plus_image, (self.screen_width * 0.035, self.screen_width * 0.035))
+
+        self.t_s_minus_image = pg.transform.scale(minus_image, (self.screen_width * 0.06, self.screen_width * 0.06))
+        self.t_s_plus_image = pg.transform.scale(plus_image, (self.screen_width * 0.06, self.screen_width * 0.06))
+
+        self.switch_on_image = pg.transform.scale(switch_on_image, (self.screen_width * 0.06, self.screen_width * 0.03))
+        self.switch_off_image = pg.transform.scale(switch_off_image,
+                                                   (self.screen_width * 0.06, self.screen_width * 0.03))
+        self.switch_neutral_image = pg.transform.scale(switch_neutral_image,
+                                                       (self.screen_width * 0.06, self.screen_width * 0.03))
+
+    def main_screen_objects(self):
+        self.images_initialization()
+
+        # Text displayed
         self.learning_button_text = self.cambria_35_font.render("Learning", True, 'white')
         self.training_button_text = self.cambria_35_font.render("Training", True, 'white')
         self.challenge_button_text = self.cambria_35_font.render("Challenge", True, 'white')
         self.quit_button_text = self.cambria_35_font.render("Quit", True, 'white')
 
-        # Learning screen
-        self.digits_in_columns_text = self.calibri_40_font.render("Digits in columns:", True, 'white')
-        self.page_number_text = self.calibri_40_font.render("Page number:", True, 'white')
-        self.page_change_mulltiplier_text = self.calibri_40_font.render("Page change multiplier:", True, 'white')
-        self.digits_on_page_text = self.calibri_40_font.render("Digits on page:", True, 'white')
-
-        # Training screen settings
-        self.training_mode_title_text = self.candara_72_font.render("Training mode", True, 'white')
-        self.choose_start_point_text = self.candara_60_font.render("Choose a start point", True, 'white')
-
-        self.start_digit_text = self.calibri_40_font.render("Digit:", True, 'white')
-        self.digit_multiplier_text = self.calibri_40_font.render("Multiplier:", True, 'white')
-
-        self.t_s_s_start_button_text = self.candara_60_font.render("Start", True, 'white')
-        self.t_s_s_back_button_text = self.candara_60_font.render("Back", True, 'white')
-
-        # Training screen
-        self.switch_keys_layout_text = self.calibri_40_font.render("Switch the keys layout", True, 'white')
-        if self.switch_position == 0:
-            self.hint_text = self.calibri_40_font.render("Hint after: " + str(self.hint_counter) + " seconds", True, (59, 59, 59))
-        elif self.switch_position == 1:
-            self.hint_text = self.calibri_40_font.render("Hint after: " + str(self.hint_counter) + " seconds", True, 'white')
-        self.your_time_text = self.candara_72_font.render("Your time:", True, 'white')
-        self.t_s_back_button_text = self.t_s_s_back_button_text
-
-        #   Squares
-        self.square_0_text = self.calibri_72_font.render("0", True, 'white')
-        self.square_1_text = self.calibri_72_font.render("1", True, 'white')
-        self.square_2_text = self.calibri_72_font.render("2", True, 'white')
-        self.square_3_text = self.calibri_72_font.render("3", True, 'white')
-        self.square_4_text = self.calibri_72_font.render("4", True, 'white')
-        self.square_5_text = self.calibri_72_font.render("5", True, 'white')
-        self.square_6_text = self.calibri_72_font.render("6", True, 'white')
-        self.square_7_text = self.calibri_72_font.render("7", True, 'white')
-        self.square_8_text = self.calibri_72_font.render("8", True, 'white')
-        self.square_9_text = self.calibri_72_font.render("9", True, 'white')
-
-
-        ### Counters text
-        # Learning screen
-        self.l_s_back_button_text = self.cambria_35_font.render("Back", True, 'white')
-
-        self.digits_in_columns_counter_text = self.calibri_40_font.render(str(self.digits_in_columns_counter), True, 'white')
-        self.page_number_counter_text = self.calibri_40_font.render(str(self.page_number_counter), True, 'white')
-        self.page_change_multiplier_counter_text = self.calibri_40_font.render("x"+str(self.page_change_multiplier_counter), True, 'white')
-        self.digits_on_page_counter_text = self.calibri_40_font.render(str(self.digits_on_page_counter_bottom) + " - " + str(self.digits_on_page_counter_top), True, 'white')
-
-        # Training screen settings
-        self.start_digit_counter_text = self.candara_50_font.render(str(self.start_digit_counter), True, 'white')
-        self.digit_multiplier_counter_text = self.candara_50_font.render("x" + str(self.digit_multiplier_counter), True, 'white')
-
-
-        ### Rectangles
-        # Main screen (buttons)
+        # Rectangles (buttons)
         self.learning_button_rect = pg.Rect(self.screen_width * 0.42, self.screen_height * 0.30,
                                             self.screen_width * 0.16, self.screen_height * 0.08)
         self.training_button_rect = pg.Rect(self.learning_button_rect.left, self.learning_button_rect.bottom + 20,
                                             self.screen_width * 0.16, self.screen_height * 0.08)
         self.challenge_button_rect = pg.Rect(self.learning_button_rect.left, self.training_button_rect.bottom + 20,
-                                            self.screen_width * 0.16, self.screen_height * 0.08)
+                                             self.screen_width * 0.16, self.screen_height * 0.08)
         self.quit_button_rect = pg.Rect(self.learning_button_rect.left, self.challenge_button_rect.bottom + 120,
-                                            self.screen_width * 0.16, self.screen_height * 0.08)
+                                        self.screen_width * 0.16, self.screen_height * 0.08)
 
         self.learning_button_text_rect = self.learning_button_text.get_rect(center=self.learning_button_rect.center)
         self.training_button_text_rect = self.training_button_text.get_rect(center=self.training_button_rect.center)
         self.challenge_button_text_rect = self.challenge_button_text.get_rect(center=self.challenge_button_rect.center)
         self.quit_button_text_rect = self.quit_button_text.get_rect(center=self.quit_button_rect.center)
 
+        # Text rects
+        self.learning_button_text_rect = self.learning_button_text.get_rect(center=self.learning_button_rect.center)
+        self.training_button_text_rect = self.training_button_text.get_rect(center=self.training_button_rect.center)
+        self.challenge_button_text_rect = self.challenge_button_text.get_rect(center=self.challenge_button_rect.center)
+        self.quit_button_text_rect = self.quit_button_text.get_rect(center=self.quit_button_rect.center)
 
-        # Learning screen (buttons)
-        #   Learning screen main digit surface
-        self.digits_rect = pg.Rect(self.screen_width * 0.06, self.screen_height * 0.1,      # Position
-             self.screen_width * 0.6, self.screen_height * 0.8)                             # Size)
+        # Images rectangles
 
-        #   Learning screen back button
-        self.l_s_back_button_rect = pg.Rect(self.digits_rect.right + 0.5 * (self.screen_width-self.digits_rect.right) - self.screen_width * 0.08,    # Position X
-             self.digits_rect.bottom - self.screen_height * 0.08,       # Position Y
-             self.screen_width * 0.16, self.screen_height * 0.08)       # Size
 
-        self.l_s_back_button_text_rect = self.l_s_back_button_text.get_rect(center=self.l_s_back_button_rect.center)
+    def learning_screen_objects(self):
+        self.images_initialization()
 
-        # Learning screen (rectangles)
+        # Texts
+        self.digits_in_columns_text = self.calibri_40_font.render("Digits in columns:", True, 'white')
+        self.page_number_text = self.calibri_40_font.render("Page number:", True, 'white')
+        self.page_change_mulltiplier_text = self.calibri_40_font.render("Page change multiplier:", True, 'white')
+        self.digits_on_page_text = self.calibri_40_font.render("Digits on page:", True, 'white')
+
+        # Rectangles
+        self.digits_rect = pg.Rect(self.screen_width * 0.06, self.screen_height * 0.1,
+                                   self.screen_width * 0.6, self.screen_height * 0.8)
         self.digits_in_columns_rect = self.digits_in_columns_text.get_rect(
-            center=(self.digits_rect.right + 0.5 * (self.screen_width - self.digits_rect.right), self.digits_rect.top + 25)
+            center=(self.digits_rect.right + 0.5 * (self.screen_width - self.digits_rect.right),
+                    self.digits_rect.top + 25)
         )
         self.page_number_rect = self.page_number_text.get_rect(
-            center=(self.digits_in_columns_rect.centerx, self.digits_in_columns_rect.centery + self.digits_in_columns_rect.height*4)
+            center=(self.digits_in_columns_rect.centerx,
+                    self.digits_in_columns_rect.centery + self.digits_in_columns_rect.height * 4)
         )
         self.page_change_mulltiplier_rect = self.page_change_mulltiplier_text.get_rect(
-            center=(self.digits_in_columns_rect.centerx, self.page_number_rect.centery + self.digits_in_columns_rect.height*4)
+            center=(self.digits_in_columns_rect.centerx,
+                    self.page_number_rect.centery + self.digits_in_columns_rect.height * 4)
         )
         self.digits_on_page_rect = self.digits_on_page_text.get_rect(
-            center=(self.digits_in_columns_rect.centerx, self.page_change_mulltiplier_rect.centery + 5 * self.digits_in_columns_rect.height)
+            center=(self.digits_in_columns_rect.centerx,
+                    self.page_change_mulltiplier_rect.centery + 5 * self.digits_in_columns_rect.height)
         )
 
+        # Buttons and counters
+        self.l_s_back_button_text = self.cambria_35_font.render("Back", True, 'white')
+        self.l_s_back_button_rect = pg.Rect(
+            self.digits_rect.right + 0.5 * (self.screen_width - self.digits_rect.right) - self.screen_width * 0.08,
+            self.digits_rect.bottom - self.screen_height * 0.08,
+            self.screen_width * 0.16, self.screen_height * 0.08)
+        self.l_s_back_button_text_rect = self.l_s_back_button_text.get_rect(center=self.l_s_back_button_rect.center)
+
+        self.digits_in_columns_counter_text = self.calibri_40_font.render(
+            str(self.digits_in_columns_counter), True, 'white')
+        self.page_number_counter_text = self.calibri_40_font.render(
+            str(self.page_number_counter), True, 'white')
+        self.page_change_multiplier_counter_text = self.calibri_40_font.render(
+            "x" + str(self.page_change_multiplier_counter), True, 'white')
+        self.digits_on_page_counter_text = self.calibri_40_font.render(
+            str(self.digits_on_page_counter_bottom) + " - " + str(self.digits_on_page_counter_top), True, 'white')
+
+        # Counters rects
+        self.digits_in_columns_counter_rect = self.digits_in_columns_counter_text.get_rect(
+            center=(self.digits_in_columns_rect.centerx, self.digits_in_columns_rect.bottom + self.digits_in_columns_rect.height)
+        )
+        self.page_number_counter_rect = self.page_number_counter_text.get_rect(
+            center=(self.page_number_rect.centerx, self.page_number_rect.bottom + self.digits_in_columns_rect.height)
+        )
+        self.page_change_multiplier_counter_rect = self.page_change_multiplier_counter_text.get_rect(
+            center=(self.page_change_mulltiplier_rect.centerx, self.page_change_mulltiplier_rect.bottom + self.digits_in_columns_rect.height)
+        )
+        self.digits_on_page_counter_rect = self.digits_on_page_counter_text.get_rect(
+            center=(self.digits_on_page_rect.centerx, self.digits_on_page_rect.bottom + self.digits_in_columns_rect.height)
+        )
+
+        # Additional rects for texts and counters
+        self.digits_in_columns_rect = self.digits_in_columns_text.get_rect(center=(
+        self.digits_rect.right + 0.5 * (self.screen_width - self.digits_rect.right), self.digits_rect.top + 25))
+        self.page_number_rect = self.page_number_text.get_rect(
+            center=(self.digits_in_columns_rect.centerx,
+                    self.digits_in_columns_rect.centery + self.digits_in_columns_rect.height * 4)
+        )
+
+        # Images rectangles
+        self.digits_in_columns_minus = self.minus_image.get_rect(
+            center=(self.digits_in_columns_rect.centerx - 80,
+                    self.digits_in_columns_rect.bottom + self.digits_in_columns_rect.height)
+        )
+        self.digits_in_columns_plus = self.plus_image.get_rect(
+            center=(self.digits_in_columns_rect.centerx + 80, self.digits_in_columns_minus.centery)
+        )
+
+        self.page_number_minus = self.minus_image.get_rect(
+            center=(self.digits_in_columns_minus.centerx, self.page_number_rect.bottom + self.page_number_rect.height)
+        )
+        self.page_number_plus = self.plus_image.get_rect(
+            center=(self.digits_in_columns_plus.centerx, self.page_number_minus.centery)
+        )
+
+        self.page_change_multiplier_minus = self.minus_image.get_rect(
+            center=(self.page_number_minus.centerx,
+                    self.page_change_mulltiplier_rect.bottom + self.page_change_mulltiplier_rect.height)
+        )
+        self.page_change_multiplier_plus = self.plus_image.get_rect(
+            center=(self.page_number_plus.centerx, self.page_change_multiplier_minus.centery)
+        )
+
+    def training_screen_settings_objects(self):
+        self.images_initialization()
+
+        # Texts
+        self.training_mode_title_text = self.candara_72_font.render("Training mode", True, 'white')
+        self.choose_start_point_text = self.candara_60_font.render("Choose a start point", True, 'white')
+        self.start_digit_text = self.calibri_40_font.render("Digit:", True, 'white')
+        self.digit_multiplier_text = self.calibri_40_font.render("Multiplier:", True, 'white')
 
 
-        # Training screen settings (rectangles)
+        # Rectangles
         self.training_mode_title_rect = self.training_mode_title_text.get_rect(
-            center=(self.screen_width * 0.5, self.screen_height * 0.2)
-        )
+            center=(self.screen_width * 0.5, self.screen_height * 0.2))
         self.choose_start_point_rect = self.choose_start_point_text.get_rect(
-            center=(
-            self.screen_width * 0.5, self.training_mode_title_rect.bottom + self.training_mode_title_rect.height * 2)
+            center=(self.screen_width * 0.5,
+                    self.training_mode_title_rect.bottom + self.training_mode_title_rect.height * 2)
         )
         self.start_digit_rect = self.start_digit_text.get_rect(
             center=(self.training_mode_title_rect.left,
@@ -287,36 +347,93 @@ class PiGame:
                     self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 0.5)
         )
 
+        # Buttons and counters
+        self.t_s_s_start_button_text = self.candara_60_font.render("Start", True, 'white')
+        self.t_s_s_start_button_rect = pg.Rect(
+            self.training_mode_title_rect.centerx - self.screen_width * 0.08,
+            self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 4,
+            self.screen_width * 0.16, self.screen_height * 0.08         # Size
+        )
+        self.t_s_s_start_button_text_rect = self.t_s_s_start_button_text.get_rect(
+            center=self.t_s_s_start_button_rect.center
+        )
 
-        # Training screen settings (buttons)
-        self.t_s_s_start_button_rect = pg.Rect(self.training_mode_title_rect.centerx - self.screen_width * 0.08,                                         # Position X
-                                               self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 4,                            # Position Y
-                                               self.screen_width * 0.16, self.screen_height * 0.08)                                                      # Size
-        self.t_s_s_back_button_rect = pg.Rect(self.t_s_s_start_button_rect.left,                                                                         # Position X
-                                               self.t_s_s_start_button_rect.bottom + 20,                                                                 # Position Y
-                                               self.screen_width * 0.16, self.screen_height * 0.08)                                                      # Size
 
-        self.t_s_s_start_button_text_rect = self.t_s_s_start_button_text.get_rect(center=self.t_s_s_start_button_rect.center)
-        self.t_s_s_back_button_text_rect = self.t_s_s_back_button_text.get_rect(center=self.t_s_s_back_button_rect.center)
+        self.t_s_s_back_button_text = self.candara_60_font.render("Back", True, 'white')
+        self.t_s_s_back_button_rect = pg.Rect(
+            self.t_s_s_start_button_rect.left,
+            self.t_s_s_start_button_rect.bottom + 20,
+            self.screen_width * 0.16, self.screen_height * 0.08
+        )
+        self.t_s_s_back_button_text_rect = self.t_s_s_back_button_text.get_rect(
+            center=self.t_s_s_back_button_rect.center
+        )
 
-        # Training screen (rectangles)
-        self.guessing_rect = pg.Rect(self.screen_width * 0.06, self.screen_height * 0.1,    # Position
-                                     self.screen_width * 0.88, self.screen_height * 0.12)       # Size)
+        self.start_digit_counter_text = self.candara_50_font.render(str(self.start_digit_counter), True, 'white')
+        self.start_digit_counter_rect = self.start_digit_counter_text.get_rect(
+            center=(self.start_digit_rect.centerx,
+                    self.start_digit_rect.bottom + self.start_digit_rect.height)
+        )
 
-        self.switch_keys_layout_rect = pg.Rect(self.guessing_rect.left, self.guessing_rect.bottom + self.guessing_rect.height,
+        self.digit_multiplier_counter_text = self.candara_50_font.render(
+            "x" + str(self.digit_multiplier_counter), True, 'white')
+        self.digit_multiplier_counter_rect = self.digit_multiplier_counter_text.get_rect(
+            center=(self.digit_multiplier_rect.centerx,
+                    self.digit_multiplier_rect.bottom + self.digit_multiplier_rect.height)
+        )
+
+        # Images rectangles
+        self.start_digit_plus = self.plus_image.get_rect(
+            center=(self.start_digit_rect.centerx + 95, self.start_digit_rect.bottom + self.start_digit_rect.height)
+        )
+        self.start_digit_minus = self.minus_image.get_rect(
+            center=(self.start_digit_rect.centerx - 95, self.start_digit_rect.bottom + self.start_digit_rect.height)
+        )
+        self.digit_multiplier_plus = self.plus_image.get_rect(
+            center=(
+            self.digit_multiplier_rect.centerx + 95, self.start_digit_rect.bottom + self.start_digit_rect.height)
+        )
+        self.digit_multiplier_minus = self.minus_image.get_rect(
+            center=(
+            self.digit_multiplier_rect.centerx - 95, self.start_digit_rect.bottom + self.start_digit_rect.height)
+        )
+
+    def training_screen_objects(self):
+        self.images_initialization()
+
+        # Texts
+        self.switch_keys_layout_text = self.calibri_40_font.render("Switch the keys layout", True, 'white')
+        if self.switch_position == 0:
+            self.hint_text = self.calibri_40_font.render("Hint after: " + str(self.hint_counter) + " seconds", True,
+                                                         (59, 59, 59))
+        elif self.switch_position == 1:
+            self.hint_text = self.calibri_40_font.render("Hint after: " + str(self.hint_counter) + " seconds", True,
+                                                         'white')
+        self.your_time_text = self.candara_72_font.render("Your time:", True, 'white')
+
+
+        # Rectangles
+        self.guessing_rect = pg.Rect(self.screen_width * 0.06, self.screen_height * 0.1,  # Position
+                                     self.screen_width * 0.88, self.screen_height * 0.12)  # Size
+
+        self.switch_keys_layout_rect = pg.Rect(self.guessing_rect.left,
+                                               self.guessing_rect.bottom + self.guessing_rect.height,
                                                self.screen_width * 0.24, self.screen_height * 0.12)
 
-        self.hint_rect = pg.Rect(self.guessing_rect.left, self.switch_keys_layout_rect.bottom + self.switch_keys_layout_rect.height * 0.4,
-                                            self.screen_width * 0.24, self.screen_height * 0.12)
+        self.hint_rect = pg.Rect(self.guessing_rect.left,
+                                 self.switch_keys_layout_rect.bottom + self.switch_keys_layout_rect.height * 0.4,
+                                 self.screen_width * 0.24, self.screen_height * 0.12)
 
-
-        self.switch_keys_layout_text_rect = self.switch_keys_layout_text.get_rect(center=self.switch_keys_layout_rect.center)
+        self.switch_keys_layout_text_rect = self.switch_keys_layout_text.get_rect(
+            center=self.switch_keys_layout_rect.center)
         self.hint_text_rect = self.hint_text.get_rect(center=self.hint_rect.center)
 
-        # Training screen (buttons)
-        self.t_s_back_button_rect = pg.Rect(self.guessing_rect.right - self.screen_width * 0.24,         # Position X
-                                            self.hint_rect.bottom + self.hint_rect.height * 0.4,         # Position Y
-                                            self.screen_width * 0.24, self.screen_height * 0.12)         # Size
+
+        # Buttons and counters
+        self.t_s_back_button_text = self.t_s_s_back_button_text
+        self.t_s_back_button_rect = pg.Rect(self.guessing_rect.right - self.screen_width * 0.24,  # Position X
+                                            self.hint_rect.bottom + self.hint_rect.height * 0.4,  # Position Y
+                                            self.screen_width * 0.24, self.screen_height * 0.12)  # Size
 
         self.t_s_back_button_text_rect = self.t_s_back_button_text.get_rect(center=self.t_s_back_button_rect.center)
 
@@ -332,158 +449,261 @@ class PiGame:
             self.square_1_y_pos = self.t_s_back_button_rect.y
             self.square_7_y_pos = self.switch_keys_layout_rect.y
 
-            # Squares with digits
-        self.square_0_rect = pg.Rect(self.guessing_rect.centerx - 0.06 * self.screen_height,                # Position X
-                                     self.t_s_back_button_rect.bottom + self.t_s_back_button_rect.height * 0.4,   # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        # Squares
+        for i in range(10):
+            # Squares texts
+            setattr(self, f'square_{i}_text', self.calibri_72_font.render(str(i), True, 'white'))
 
-        self.square_1_rect = pg.Rect(self.square_0_rect.left - self.square_0_rect.width - self.guessing_rect.height * 0.5,             # Position X
-                                     self.square_1_y_pos,                # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
 
-        self.square_2_rect = pg.Rect(self.square_0_rect.x,                                                  # Position X
-                                     self.square_1_rect.y,                                                  # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        # Squares rects
+        self.square_0_rect = pg.Rect(self.guessing_rect.centerx - 0.06 * self.screen_height,  # Position X
+                                     self.t_s_back_button_rect.bottom + self.t_s_back_button_rect.height * 0.4,
+                                     # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        self.square_3_rect = pg.Rect(self.square_0_rect.left + self.square_0_rect.width + self.guessing_rect.height * 0.5,             # Position X
-                                     self.square_1_rect.y,                                                  # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        self.square_1_rect = pg.Rect(
+            self.square_0_rect.left - self.square_0_rect.width - self.guessing_rect.height * 0.5,  # Position X
+            self.square_1_y_pos,  # Position Y
+            self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        self.square_4_rect = pg.Rect(self.square_1_rect.x,                                                  # Position X
-                                     self.hint_rect.y,                                                      # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        self.square_2_rect = pg.Rect(self.square_0_rect.x,  # Position X
+                                     self.square_1_rect.y,  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        self.square_5_rect = pg.Rect(self.square_2_rect.x,                                                  # Position X
-                                     self.square_4_rect.y,                                                  # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        self.square_3_rect = pg.Rect(
+            self.square_0_rect.left + self.square_0_rect.width + self.guessing_rect.height * 0.5,  # Position X
+            self.square_1_rect.y,  # Position Y
+            self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        self.square_6_rect = pg.Rect(self.square_3_rect.x,                                                  # Position X
-                                     self.square_4_rect.y,                                                  # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        self.square_4_rect = pg.Rect(self.square_1_rect.x,  # Position X
+                                     self.hint_rect.y,  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        self.square_7_rect = pg.Rect(self.square_1_rect.x,                                                  # Position X
-                                     self.square_7_y_pos,                                           # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        self.square_5_rect = pg.Rect(self.square_2_rect.x,  # Position X
+                                     self.square_4_rect.y,  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        self.square_8_rect = pg.Rect(self.square_2_rect.x,                                                  # Position X
-                                     self.square_7_rect.y,                                                  # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        self.square_6_rect = pg.Rect(self.square_3_rect.x,  # Position X
+                                     self.square_4_rect.y,  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        self.square_9_rect = pg.Rect(self.square_3_rect.x,                                                  # Position X
-                                     self.square_7_rect.y,                                                  # Position Y
-                                     self.screen_height * 0.12, self.screen_height * 0.12)                    # Size
+        self.square_7_rect = pg.Rect(self.square_1_rect.x,  # Position X
+                                     self.square_7_y_pos,  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        self.square_0_text_rect = self.square_0_text.get_rect(center=self.square_0_rect.center)
-        self.square_1_text_rect = self.square_1_text.get_rect(center=self.square_1_rect.center)
-        self.square_2_text_rect = self.square_2_text.get_rect(center=self.square_2_rect.center)
-        self.square_3_text_rect = self.square_3_text.get_rect(center=self.square_3_rect.center)
-        self.square_4_text_rect = self.square_4_text.get_rect(center=self.square_4_rect.center)
-        self.square_5_text_rect = self.square_5_text.get_rect(center=self.square_5_rect.center)
-        self.square_6_text_rect = self.square_6_text.get_rect(center=self.square_6_rect.center)
-        self.square_7_text_rect = self.square_7_text.get_rect(center=self.square_7_rect.center)
-        self.square_8_text_rect = self.square_8_text.get_rect(center=self.square_8_rect.center)
-        self.square_9_text_rect = self.square_9_text.get_rect(center=self.square_9_rect.center)
+        self.square_8_rect = pg.Rect(self.square_2_rect.x,  # Position X
+                                     self.square_7_rect.y,  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)  # Size
 
-        ### Counters rectangles
-        # Learning screen
-        self.digits_in_columns_counter_rect = self.digits_in_columns_counter_text.get_rect(
-            center=(self.digits_in_columns_rect.centerx, self.digits_in_columns_rect.bottom + self.digits_in_columns_rect.height)
+        self.square_9_rect = pg.Rect(self.square_3_rect.x,  # Position X
+                                     self.square_7_rect.y,  # Position Y
+                                     self.screen_height * 0.12, self.screen_height * 0.12)  # Size
+
+        # Text rects for squares
+        for i in range(10):
+            square_text = getattr(self, f'square_{i}_text')
+            square_rect = getattr(self, f'square_{i}_rect')
+            setattr(self, f'square_{i}_text_rect', square_text.get_rect(center=square_rect.center))
+
+        # Images rectangles
+        self.hint_minus = self.t_s_minus_image.get_rect(
+            center=(self.hint_rect.centerx - (self.hint_rect.width * 0.5) + self.screen_width * 0.03,
+                    self.hint_rect.bottom + self.hint_rect.height * 0.7)
         )
-        self.page_number_counter_rect = self.page_number_counter_text.get_rect(
-            center=(self.page_number_rect.centerx, self.page_number_rect.bottom + self.digits_in_columns_rect.height)
+        self.hint_plus = self.t_s_plus_image.get_rect(
+            center=(self.hint_rect.centerx, self.hint_rect.bottom + self.hint_rect.height * 0.7)
         )
-        self.page_change_multiplier_counter_rect = self.page_change_multiplier_counter_text.get_rect(
-            center=(self.page_change_mulltiplier_rect.centerx, self.page_change_mulltiplier_rect.bottom + self.digits_in_columns_rect.height)
+        self.switch_on = self.switch_on_image.get_rect(
+            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03,
+                    self.hint_rect.bottom + self.hint_rect.height * 0.7)
         )
-        self.digits_on_page_counter_rect = self.digits_on_page_counter_text.get_rect(
-            center=(self.digits_on_page_rect.centerx, self.digits_on_page_rect.bottom + self.digits_in_columns_rect.height)
+        self.switch_off = self.switch_off_image.get_rect(
+            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03,
+                    self.hint_rect.bottom + self.hint_rect.height * 0.7)
+        )
+        self.switch_neutral = self.switch_neutral_image.get_rect(
+            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03,
+                    self.hint_rect.bottom + self.hint_rect.height * 0.7)
         )
 
-        # Training screen settings
+    def challenge_screen_settings_objects(self):
+        self.images_initialization()
+
+        # Texts
+        self.challenge_mode_title_text = self.candara_72_font.render("Challenge mode", True, 'white')
+        self.choose_start_point_text = self.candara_60_font.render("Choose a start point", True, 'white')
+        self.set_thinking_time_text = self.candara_60_font.render("Set thinking time [s]", True, 'white')
+        self.set_ch_goal_text = self.candara_60_font.render("Set challenge goal", True, 'white')
+        self.mistakes_allowed_text = self.candara_60_font.render("Mistakes allowed", True, 'white')
+        self.start_digit_text = self.calibri_40_font.render("Digit:", True, 'white')
+        self.digit_multiplier_text = self.calibri_40_font.render("Multiplier:", True, 'white')
+
+
+        # Rectangles
+        self.challenge_mode_title_rect = self.challenge_mode_title_text.get_rect(
+            center=(self.screen_width * 0.5, self.screen_height * 0.15)
+        )
+        self.choose_start_point_rect = self.choose_start_point_text.get_rect(
+            center=(self.screen_width * 0.25,
+                    self.challenge_mode_title_rect.bottom + self.challenge_mode_title_rect.height)
+        )
+        self.start_digit_rect = self.start_digit_text.get_rect(
+            center=(self.choose_start_point_rect.left + 40,
+                    self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 0.5)
+        )
+        self.digit_multiplier_rect = self.digit_multiplier_text.get_rect(
+            center=(self.choose_start_point_rect.right - 40,
+                    self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 0.5)
+        )
+        self.set_ch_goal_rect = self.set_ch_goal_text.get_rect(
+            center=(self.choose_start_point_rect.centerx,
+                    self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 4.5)
+        )
+        self.goal_digit_rect = self.start_digit_text.get_rect(
+            center=(self.start_digit_rect.centerx,
+                    self.set_ch_goal_rect.bottom + self.set_ch_goal_rect.height * 0.5)
+        )
+        self.goal_digit_multiplier_rect = self.digit_multiplier_text.get_rect(
+            center=(self.digit_multiplier_rect.centerx,
+                    self.set_ch_goal_rect.bottom + self.set_ch_goal_rect.height * 0.5)
+        )
+        self.set_thinking_time_rect = self.set_thinking_time_text.get_rect(
+            center=(self.screen_width * 0.75, self.choose_start_point_rect.centery)
+        )
+        self.mistakes_allowed_rect = self.mistakes_allowed_text.get_rect(
+            center=(self.set_thinking_time_rect.centerx, self.set_ch_goal_rect.centery)
+        )
+
+
+        # Buttons and counters
+         # Start button
+        self.ch_s_s_start_button_text = self.candara_60_font.render("Start", True, 'white')
+        self.ch_s_s_start_button_rect = pg.Rect(
+            self.challenge_mode_title_rect.centerx - self.screen_width * 0.08,
+            self.set_ch_goal_rect.bottom + self.set_ch_goal_rect.height * 3.5,
+            self.screen_width * 0.16, self.screen_height * 0.08  # Size
+        )
+        self.ch_s_s_start_button_text_rect = self.ch_s_s_start_button_text.get_rect(
+            center=self.ch_s_s_start_button_rect.center
+        )
+
+         # Back button
+        self.ch_s_s_back_button_text = self.candara_60_font.render("Back", True, 'white')
+        self.ch_s_s_back_button_rect = pg.Rect(
+            self.ch_s_s_start_button_rect.left,
+            self.ch_s_s_start_button_rect.bottom + 20,
+            self.screen_width * 0.16, self.screen_height * 0.08
+        )
+        self.ch_s_s_back_button_text_rect = self.ch_s_s_back_button_text.get_rect(
+            center=self.ch_s_s_back_button_rect.center
+        )
+
+         # Start point counter
+        self.start_digit_counter_text = self.candara_50_font.render(str(self.start_digit_counter), True, 'white')
         self.start_digit_counter_rect = self.start_digit_counter_text.get_rect(
-            center=(self.start_digit_rect.centerx, self.start_digit_rect.bottom + self.start_digit_rect.height)
+            center=(self.start_digit_rect.centerx,
+                    self.start_digit_rect.bottom + self.start_digit_rect.height)
         )
+
+         # Start point multiplier counter
+        self.digit_multiplier_counter_text = self.candara_50_font.render(
+            "x" + str(self.digit_multiplier_counter), True, 'white')
         self.digit_multiplier_counter_rect = self.digit_multiplier_counter_text.get_rect(
-            center=(self.digit_multiplier_rect.centerx, self.digit_multiplier_rect.bottom + self.digit_multiplier_rect.height)
+            center=(self.digit_multiplier_rect.centerx,
+                    self.digit_multiplier_rect.bottom + self.digit_multiplier_rect.height)
         )
 
-
-        # Images
-        minus_image = pg.image.load('images/minus.png')
-        plus_image = pg.image.load('images/plus.png')
-        switch_on_image = pg.image.load('images/switch_on.png')
-        switch_off_image = pg.image.load('images/switch_off.png')
-        switch_neutral_image = pg.image.load('images/switch_neutral.png')
-
-        # Scaling images
-        self.minus_image = pg.transform.scale(minus_image, (self.screen_width * 0.035, self.screen_width * 0.035))
-        self.plus_image = pg.transform.scale(plus_image, (self.screen_width * 0.035, self.screen_width * 0.035))
-
-        self.t_s_minus_image = pg.transform.scale(minus_image, (self.screen_width * 0.06, self.screen_width * 0.06))
-        self.t_s_plus_image = pg.transform.scale(plus_image, (self.screen_width * 0.06, self.screen_width * 0.06))
-
-        self.switch_on_image = pg.transform.scale(switch_on_image, (self.screen_width * 0.06, self.screen_width * 0.03))
-        self.switch_off_image = pg.transform.scale(switch_off_image, (self.screen_width * 0.06, self.screen_width * 0.03))
-        self.switch_neutral_image = pg.transform.scale(switch_neutral_image, (self.screen_width * 0.06, self.screen_width * 0.03))
-
-        ### Images rectangles
-        # Learning screen
-        self.digits_in_columns_minus = self.minus_image.get_rect(
-            center=(self.digits_in_columns_rect.centerx - 80, self.digits_in_columns_rect.bottom + self.digits_in_columns_rect.height)
-        )
-        self.digits_in_columns_plus = self.plus_image.get_rect(
-            center=(self.digits_in_columns_rect.centerx + 80, self.digits_in_columns_minus.centery)
+         # Goal digit counter
+        self.goal_digit_counter_text = self.candara_50_font.render(
+            str(self.goal_digit_counter), True, 'white')
+        self.goal_digit_counter_rect = self.goal_digit_counter_text.get_rect(
+            center=(self.goal_digit_rect.centerx,
+                    self.goal_digit_rect.bottom + self.goal_digit_rect.height)
         )
 
-        self.page_number_minus = self.minus_image.get_rect(
-            center=(self.digits_in_columns_minus.centerx, self.page_number_rect.bottom + self.page_number_rect.height)
-        )
-        self.page_number_plus = self.plus_image.get_rect(
-            center=(self.digits_in_columns_plus.centerx, self.page_number_minus.centery)
-        )
-
-        self.page_change_multiplier_minus = self.minus_image.get_rect(
-            center=(self.page_number_minus.centerx, self.page_change_mulltiplier_rect.bottom + self.page_change_mulltiplier_rect.height)
-        )
-        self.page_change_multiplier_plus = self.plus_image.get_rect(
-            center=(self.page_number_plus.centerx, self.page_change_multiplier_minus.centery)
+         # Goal digit multiplier counter
+        self.goal_digit_multiplier_counter_text = self.candara_50_font.render(
+            "x" + str(self.goal_digit_multiplier_counter), True, 'white')
+        self.goal_digit_multiplier_counter_rect = self.goal_digit_multiplier_counter_text.get_rect(
+            center=(self.goal_digit_multiplier_rect.centerx,
+                    self.goal_digit_multiplier_rect.bottom + self.goal_digit_multiplier_rect.height)
         )
 
-        # Training screen settings
+         # Thinking time counter
+        self.thinking_time_counter_text = self.candara_50_font.render(
+            str(self.thinking_time_counter), True, 'white')
+        self.thinking_time_counter_rect = self.thinking_time_counter_text.get_rect(
+            center=(self.set_thinking_time_rect.centerx,
+                    self.start_digit_counter_rect.centery)
+        )
+
+         # Mistakes allowed counter
+        self.mistakes_allowed_counter_text = self.candara_50_font.render(
+            str(self.mistakes_allowed_counter), True, 'white')
+        self.mistakes_allowed_counter_rect = self.mistakes_allowed_counter_text.get_rect(
+            center=(self.set_thinking_time_rect.centerx,
+                    self.goal_digit_counter_rect.centery)
+        )
+
+        # Image rectangles
+         # Start point + and -
         self.start_digit_plus = self.plus_image.get_rect(
             center=(self.start_digit_rect.centerx + 95, self.start_digit_rect.bottom + self.start_digit_rect.height)
         )
         self.start_digit_minus = self.minus_image.get_rect(
             center=(self.start_digit_rect.centerx - 95, self.start_digit_rect.bottom + self.start_digit_rect.height)
         )
+
+         # Start point multiplier + and -
         self.digit_multiplier_plus = self.plus_image.get_rect(
-            center=(self.digit_multiplier_rect.centerx + 95, self.start_digit_rect.bottom + self.start_digit_rect.height)
+            center=(self.digit_multiplier_rect.centerx + 95,
+                    self.start_digit_rect.bottom + self.start_digit_rect.height)
         )
         self.digit_multiplier_minus = self.minus_image.get_rect(
-            center=(self.digit_multiplier_rect.centerx - 95, self.start_digit_rect.bottom + self.start_digit_rect.height)
+            center=(self.digit_multiplier_rect.centerx - 95,
+                    self.start_digit_rect.bottom + self.start_digit_rect.height)
         )
 
-        # Training screen
-        self.hint_minus = self.t_s_minus_image.get_rect(
-            center=(self.hint_rect.centerx - (self.hint_rect.width * 0.5) + self.screen_width * 0.03, self.hint_rect.bottom + self.hint_rect.height * 0.7)
+         # Goal digit + and -
+        self.goal_digit_plus = self.plus_image.get_rect(
+            center=(self.start_digit_plus.centerx, self.goal_digit_rect.bottom + self.goal_digit_rect.height)
         )
-        self.hint_plus = self.t_s_plus_image.get_rect(
-            center=(self.hint_rect.centerx, self.hint_rect.bottom + self.hint_rect.height * 0.7)
-        )
-        self.switch_on = self.switch_on_image.get_rect(
-            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03, self.hint_rect.bottom + self.hint_rect.height * 0.7)
-        )
-        self.switch_off = self.switch_off_image.get_rect(
-            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03, self.hint_rect.bottom + self.hint_rect.height * 0.7)
-        )
-        self.switch_neutral = self.switch_neutral_image.get_rect(
-            center=(self.hint_rect.centerx + (self.hint_rect.width * 0.5) - self.screen_width * 0.03, self.hint_rect.bottom + self.hint_rect.height * 0.7)
+        self.goal_digit_minus = self.minus_image.get_rect(
+            center=(self.start_digit_minus.centerx, self.goal_digit_rect.bottom + self.goal_digit_rect.height)
         )
 
+         # Goal digit counter + and -
+        self.goal_digit_multiplier_plus = self.plus_image.get_rect(
+            center=(self.digit_multiplier_plus.centerx,
+                    self.goal_digit_multiplier_rect.bottom + self.goal_digit_multiplier_rect.height)
+        )
+        self.goal_digit_multiplier_minus = self.minus_image.get_rect(
+            center=(self.digit_multiplier_minus.centerx,
+                    self.goal_digit_multiplier_rect.bottom + self.goal_digit_multiplier_rect.height)
+        )
 
+         # Thinking time + and -
+        self.thinking_time_plus = self.plus_image.get_rect(
+            center=(self.set_thinking_time_rect.centerx + 95, self.start_digit_plus.centery)
+        )
+        self.thinking_time_minus = self.minus_image.get_rect(
+            center=(self.set_thinking_time_rect.centerx - 95, self.start_digit_plus.centery)
+        )
+
+         # Mistakes allowed + and -
+        self.mistakes_allowed_plus = self.plus_image.get_rect(
+            center=(self.thinking_time_plus.centerx, self.goal_digit_multiplier_minus.centery)
+        )
+        self.mistakes_allowed_minus = self.minus_image.get_rect(
+            center=(self.thinking_time_minus.centerx, self.goal_digit_multiplier_minus.centery)
+        )
+
+    def challenge_screen_objects(self):
+        self.images_initialization()
+        pass
 
     def learning_screen_logic(self):
-        self.screens_objects()
+        self.learning_screen_objects()
 
         if self.digits_in_columns_counter == 1:
             self.x = 25
@@ -620,7 +840,7 @@ class PiGame:
     def training_screen_settings(self):
         training_settings_running = True
         self.main_values()
-        self.screens_objects()
+        self.training_screen_settings_objects()
 
 
         while training_settings_running:
@@ -656,7 +876,7 @@ class PiGame:
                     training_settings_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.t_s_s_back_button_rect.collidepoint(event.pos):
-                        return
+                        self.main_screen()
                     if self.t_s_s_start_button_rect.collidepoint(event.pos):
                         self.training_screen()
 
@@ -666,13 +886,13 @@ class PiGame:
                             self.start_digit_counter -= self.digit_multiplier_counter
                         else:
                             self.start_digit_counter = 1
-                        self.screens_objects()
+                        self.training_screen_settings_objects()
                         self.start_digit_counter_text = self.candara_50_font.render(
                             str(self.start_digit_counter), True, 'white')
 
                     if self.start_digit_plus.collidepoint(event.pos):
                         self.start_digit_counter += self.digit_multiplier_counter
-                        self.screens_objects()
+                        self.training_screen_settings_objects()
                         self.start_digit_counter_text = self.candara_50_font.render(
                             str(self.start_digit_counter), True, 'white')
 
@@ -684,7 +904,7 @@ class PiGame:
                         # Choose previous index, if it is not the beginning of the list
                         if current_index > 0:
                             self.digit_multiplier_counter = self.digit_multipliers[current_index - 1]
-                            self.screens_objects()
+                            self.training_screen_settings_objects()
                             self.digit_multiplier_counter_text = self.candara_50_font.render(
                                 "x" + str(self.digit_multiplier_counter), True, 'white')
 
@@ -695,7 +915,7 @@ class PiGame:
                         # Choose next index, if it is not the end of the list
                         if current_index < len(self.digit_multipliers) - 1:
                             self.digit_multiplier_counter = self.digit_multipliers[current_index + 1]
-                            self.screens_objects()
+                            self.training_screen_settings_objects()
                             self.digit_multiplier_counter_text = self.candara_50_font.render(
                                 "x" + str(self.digit_multiplier_counter), True, 'white')
 
@@ -703,8 +923,8 @@ class PiGame:
             self.clock.tick(60)
 
     def training_screen(self):
-        self.main_values()
         training_running = True
+        self.training_screen_objects()
 
         start_time = time.time()  # Start time initialization
         reset_time = time.time()  # Time of last interaction with digit squares
@@ -717,7 +937,7 @@ class PiGame:
 
 
         while training_running:
-            self.screens_objects()
+            self.training_screen_objects()
             self.screen.fill((39, 39, 39))  # Dark gray color
 
             # Time calculation
@@ -809,7 +1029,8 @@ class PiGame:
                     training_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.t_s_back_button_rect.collidepoint(event.pos):
-                        return
+                        self.main_values()
+                        self.training_screen_settings()
                     if self.switch_on.collidepoint(event.pos):
                         if self.switch_position == 0:
                             self.screen.blit(self.switch_neutral_image, self.switch_neutral)
@@ -820,10 +1041,10 @@ class PiGame:
                     if self.hint_plus.collidepoint(event.pos) and self.switch_position == 1:
                         self.hint_counter = min(10, self.hint_counter + 1)
                     if self.hint_minus.collidepoint(event.pos) and self.switch_position == 1:
-                        self.hint_counter = max(2, self.hint_counter - 1)
+                        self.hint_counter = max(0, self.hint_counter - 1)
                     if self.switch_keys_layout_rect.collidepoint(event.pos):
                         self.keys_layout = 1 - self.keys_layout
-                        self.screens_objects()
+                        self.training_screen_objects()
 
                     # Squares with digits
                     for i in range(10):
@@ -852,7 +1073,6 @@ class PiGame:
         else:
             self.incorrect_square_number = user_input
 
-
     def compare_tokens(self, user_input, pi_tokens):
         user_input = list(user_input)
 
@@ -868,22 +1088,178 @@ class PiGame:
 
     def challenge_screen_settings(self):
         challenge_settings_running = True
-        pass
+
+        self.main_values()
+        self.challenge_screen_settings_objects()
+
+        while challenge_settings_running:
+            self.screen.fill((59, 59, 59))  # Dark gray color
+
+            # Images drawing on the screen
+            self.screen.blit(self.minus_image, self.start_digit_minus)
+            self.screen.blit(self.plus_image, self.start_digit_plus)
+
+            self.screen.blit(self.minus_image, self.digit_multiplier_minus)
+            self.screen.blit(self.plus_image, self.digit_multiplier_plus)
+
+            self.screen.blit(self.minus_image, self.goal_digit_minus)
+            self.screen.blit(self.plus_image, self.goal_digit_plus)
+
+            self.screen.blit(self.minus_image, self.goal_digit_multiplier_minus)
+            self.screen.blit(self.plus_image, self.goal_digit_multiplier_plus)
+
+            self.screen.blit(self.minus_image, self.thinking_time_minus)
+            self.screen.blit(self.plus_image, self.thinking_time_plus)
+
+            self.screen.blit(self.minus_image, self.mistakes_allowed_minus)
+            self.screen.blit(self.plus_image, self.mistakes_allowed_plus)
+
+
+            # Drawing rectangles
+            self.screen.blit(self.challenge_mode_title_text, self.challenge_mode_title_rect)
+
+             # Start point
+            self.screen.blit(self.choose_start_point_text, self.choose_start_point_rect)
+            self.screen.blit(self.start_digit_text, self.start_digit_rect)
+            self.screen.blit(self.digit_multiplier_text, self.digit_multiplier_rect)
+
+            self.screen.blit(self.start_digit_counter_text, self.start_digit_counter_rect)
+            self.screen.blit(self.digit_multiplier_counter_text, self.digit_multiplier_counter_rect)
+
+
+             # Goal
+            self.screen.blit(self.set_ch_goal_text, self.set_ch_goal_rect)
+            self.screen.blit(self.start_digit_text, self.goal_digit_rect)
+            self.screen.blit(self.digit_multiplier_text, self.goal_digit_multiplier_rect)
+
+            self.screen.blit(self.goal_digit_counter_text, self.goal_digit_counter_rect)
+            self.screen.blit(self.goal_digit_multiplier_counter_text, self.goal_digit_multiplier_counter_rect)
+
+             # Thinking time
+            self.screen.blit(self.set_thinking_time_text, self.set_thinking_time_rect)
+
+            self.screen.blit(self.thinking_time_counter_text, self.thinking_time_counter_rect)
+
+
+             # Mistakes allowed
+            self.screen.blit(self.mistakes_allowed_text, self.mistakes_allowed_rect)
+
+            self.screen.blit(self.mistakes_allowed_counter_text, self.mistakes_allowed_counter_rect)
+
+
+            # Drawing buttons
+            pg.draw.rect(self.screen, 'white', self.ch_s_s_start_button_rect, 5)
+            pg.draw.rect(self.screen, 'white', self.ch_s_s_back_button_rect, 5)
+
+            self.screen.blit(self.ch_s_s_start_button_text, self.ch_s_s_start_button_text_rect)
+            self.screen.blit(self.ch_s_s_back_button_text, self.ch_s_s_back_button_text_rect)
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    challenge_settings_running = False
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    if self.ch_s_s_back_button_rect.collidepoint(event.pos):
+                        self.main_screen()
+                    if self.ch_s_s_start_button_rect.collidepoint(event.pos):
+                        self.challenge_screen()
+
+                    # Start digit - and + handling
+                    if self.start_digit_minus.collidepoint(event.pos):
+                        self.start_digit_counter = max(1, self.start_digit_counter - self.digit_multiplier_counter)
+                        self.challenge_screen_settings_objects()
+                        self.start_digit_counter_text = self.candara_50_font.render(
+                            str(self.start_digit_counter), True, 'white')
+
+                    if self.start_digit_plus.collidepoint(event.pos):
+                        self.start_digit_counter += self.digit_multiplier_counter
+                        self.challenge_screen_settings_objects()
+                        self.start_digit_counter_text = self.candara_50_font.render(
+                            str(self.start_digit_counter), True, 'white')
+
+                    # digit_multiplier - and + handling
+                    if self.digit_multiplier_minus.collidepoint(event.pos):
+                        current_index = self.digit_multipliers.index(self.digit_multiplier_counter)
+                        self.digit_multiplier_counter = self.digit_multipliers[max(0, current_index - 1)]
+                        self.challenge_screen_settings_objects()
+                        self.digit_multiplier_counter_text = self.candara_50_font.render(
+                            "x" + str(self.digit_multiplier_counter), True, 'white')
+
+                    if self.digit_multiplier_plus.collidepoint(event.pos):
+                        current_index = self.digit_multipliers.index(self.digit_multiplier_counter)
+                        self.digit_multiplier_counter = self.digit_multipliers[
+                            min(len(self.digit_multipliers) - 1, current_index + 1)]
+                        self.challenge_screen_settings_objects()
+                        self.digit_multiplier_counter_text = self.candara_50_font.render(
+                            "x" + str(self.digit_multiplier_counter), True, 'white')
+
+                    # Goal digit - and + handling
+                    if self.goal_digit_minus.collidepoint(event.pos):
+                        self.goal_digit_counter = max(25, self.goal_digit_counter - self.goal_digit_multiplier_counter)
+                        self.challenge_screen_settings_objects()
+                        self.goal_digit_counter_text = self.candara_50_font.render(
+                            str(self.goal_digit_counter), True, 'white')
+
+                    if self.goal_digit_plus.collidepoint(event.pos):
+                        self.goal_digit_counter += self.goal_digit_multiplier_counter
+                        self.challenge_screen_settings_objects()
+                        self.goal_digit_counter_text = self.candara_50_font.render(
+                            str(self.goal_digit_counter), True, 'white')
+
+                    # Goal multiplier - and + handling
+                    if self.goal_digit_multiplier_minus.collidepoint(event.pos):
+                        current_index = self.goal_digit_multipliers.index(self.goal_digit_multiplier_counter)
+                        self.goal_digit_multiplier_counter = self.goal_digit_multipliers[max(0, current_index - 1)]
+                        self.challenge_screen_settings_objects()
+                        self.goal_digit_multiplier_counter_text = self.candara_50_font.render(
+                            "x" + str(self.goal_digit_multiplier_counter), True, 'white')
+
+                    if self.goal_digit_multiplier_plus.collidepoint(event.pos):
+                        current_index = self.goal_digit_multipliers.index(self.goal_digit_multiplier_counter)
+                        self.goal_digit_multiplier_counter = self.goal_digit_multipliers[
+                            min(len(self.goal_digit_multipliers) - 1, current_index + 1)]
+                        self.challenge_screen_settings_objects()
+                        self.goal_digit_multiplier_counter_text = self.candara_50_font.render(
+                            "x" + str(self.goal_digit_multiplier_counter), True, 'white')
+
+                    # Thinking time - and + handling
+                    if self.thinking_time_minus.collidepoint(event.pos):
+                        self.thinking_time_counter = max(5, self.thinking_time_counter - 5)
+                        self.challenge_screen_settings_objects()
+                        self.thinking_time_counter_text = self.candara_50_font.render(
+                            str(self.thinking_time_counter), True, 'white')
+
+                    if self.thinking_time_plus.collidepoint(event.pos):
+                        self.thinking_time_counter = min(60, self.thinking_time_counter + 5)
+                        self.challenge_screen_settings_objects()
+                        self.thinking_time_counter_text = self.candara_50_font.render(
+                            str(self.thinking_time_counter), True, 'white')
+
+                    # Mistakes allowed - and + handling
+                    if self.mistakes_allowed_minus.collidepoint(event.pos):
+                        self.mistakes_allowed_counter = max(1, self.mistakes_allowed_counter - 1)
+                        self.challenge_screen_settings_objects()
+                        self.mistakes_allowed_counter_text = self.candara_50_font.render(
+                            str(self.mistakes_allowed_counter), True, 'white')
+
+                    if self.mistakes_allowed_plus.collidepoint(event.pos):
+                        self.mistakes_allowed_counter = min(5, self.mistakes_allowed_counter + 1)
+                        self.challenge_screen_settings_objects()
+                        self.mistakes_allowed_counter_text = self.candara_50_font.render(
+                            str(self.mistakes_allowed_counter), True, 'white')
+
+            pg.display.flip()
+            self.clock.tick(60)
 
     def challenge_screen(self):
         challenge_running = True
         pass
+
 
 if __name__ == '__main__':
 
     game = PiGame()
     game.main_screen()
 
-# Zająć się challenge screenem
-# Zaplanować jak ma wyglądać
-# Zacząć coś pisać
+# Poprawić rozmieszczenie wszystkiego na challenge_screen_settings
 
-
-
-
-
+# W wolnym czasie poprawić sposób rozmieszczania cyfr na learning screenie zeby adaptowało się to do mniejszych ekranów
