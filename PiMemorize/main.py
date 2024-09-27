@@ -719,9 +719,13 @@ class PiGame:
 
         self.goal_text = self.candara_60_font.render("Goal: " + str(self.goal_digit_counter), True, 'white')
 
+        #   Game_over texts
         self.game_text = self.candara_96_font.render("Game", True, 'white')
         self.over_text = self.candara_96_font.render("Over", True, 'white')
 
+        #   Winning texts
+        self.win_main_text = self.candara_96_font.render("Good job!", True, 'white')
+        self.win_second_text = self.calibri_55_font.render("You have reached the goal", True, 'yellow')
 
 
         # Rectangles
@@ -745,6 +749,13 @@ class PiGame:
         )
         self.over_rect = self.over_text.get_rect(
             center=(self.game_rect.centerx, self.game_rect.bottom + self.game_rect.height)
+        )
+
+        self.win_main_rect = self.win_main_text.get_rect(
+            center=(self.screen_width * 0.5, self.screen_height * 0.5)
+        )
+        self.win_second_rect = self.win_second_text.get_rect(
+            center=(self.win_main_rect.centerx, self.win_main_rect.bottom + self.win_main_rect.height)
         )
 
 
@@ -1340,6 +1351,7 @@ class PiGame:
 
         self.user_input = []
         self.incorrect_square_number = None
+        self.goal_reached = False
 
         self.max_display_digits = int(self.guessing_rect.width / 37.53)  # Number of digits visible in guessing_rect
 
@@ -1348,13 +1360,16 @@ class PiGame:
             self.screen.fill((39, 39, 39))  # Dark gray color
 
             # Time calculation for overall time
-            if self.game_over == False:
+            if self.game_over == False and self.goal_reached == False:
                 self.training_elapsed_time = time.time() - start_time
             formatted_time = time.strftime('%M:%S', time.gmtime(self.training_elapsed_time))  # Time formatted to MM:SS
+
 
             # Time rendering
             if self.game_over:
                 time_text = self.calibri_72_font.render(f"{formatted_time}", True, 'red')
+            elif self.goal_reached:
+                time_text = self.calibri_72_font.render(f"{formatted_time}", True, 'green')
             else:
                 time_text = self.calibri_72_font.render(f"{formatted_time}", True, 'white')
             time_rect = time_text.get_rect(
@@ -1362,7 +1377,7 @@ class PiGame:
             self.screen.blit(time_text, time_rect)
 
             # Thinking time calculation (remaining time in seconds)
-            if self.game_over == False:
+            if self.game_over == False and self.goal_reached == False:
                 self.thinking_elapsed_time = time.time() - thinking_start_time
             remaining_thinking_time = max(self.thinking_time_counter - self.thinking_elapsed_time, 0)
             formatted_thinking_time = "{:.2f}".format(remaining_thinking_time)
@@ -1417,7 +1432,7 @@ class PiGame:
             self.screen.blit(self.digit_number_text, self.digit_number_rect)
 
             # Drawing buttons
-            if self.game_over:
+            if self.game_over or self.goal_reached:
                 pg.draw.rect(self.screen, 'green', self.back_button_rect, 5)
             else:
                 pg.draw.rect(self.screen, 'white', self.back_button_rect, 3)
@@ -1426,9 +1441,34 @@ class PiGame:
             self.screen.blit(self.back_button_text, self.back_button_text_rect)
 
             # Squares with digits
-            if self.game_over == False:
+            if self.game_over == True:
+                # Keyboard disappearing and Game Over printing
+                self.screen.blit(self.game_text, self.game_rect)
+                self.screen.blit(self.over_text, self.over_rect)
 
-            # Printing keyboard only if it is not game_over
+                # Printing 5 next correct digits
+                pi_digits = self.read_pi_digits()[self.start_digit_counter - 1:]
+                self.correct_digits_text = self.calibri_60_font.render(
+                    "Should be: " + pi_digits[len(self.user_input):len(self.user_input)+5] + "...",
+                    True, 'yellow')
+
+                self.correct_digits_rect = self.correct_digits_text.get_rect(
+                    center=(self.over_rect.centerx, self.over_rect.bottom + self.over_rect.height * 0.5)
+                )
+
+                self.screen.blit(self.correct_digits_text, self.correct_digits_rect)
+
+            # Winning condition
+            elif self.digit_counter - 1 == self.goal_digit_counter:
+                self.goal_reached = True
+                self.goal_text = self.candara_60_font.render("Goal: " + str(self.goal_digit_counter), True, 'green')
+
+                # Keyboard disappearing and Congrats printing
+                self.screen.blit(self.win_main_text, self.win_main_rect)
+                self.screen.blit(self.win_second_text, self.win_second_rect)
+
+            else:
+                # Printing keyboard only if it is not game_over
                 for i in range(10):
                     pg.draw.rect(self.screen, 'white', getattr(self, f'square_{i}_rect'), 5)
                     self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
@@ -1438,22 +1478,6 @@ class PiGame:
                     i = self.incorrect_square_number
                     pg.draw.rect(self.screen, 'red', getattr(self, f'square_{i}_rect'), 5)
                     self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
-            else:
-                # Keyboard disappearing and Game Over printing
-                self.screen.blit(self.game_text, self.game_rect)
-                self.screen.blit(self.over_text, self.over_rect)
-
-                # Printing 10 next correct digits
-                pi_digits = self.read_pi_digits()[self.start_digit_counter - 1:]
-                self.correct_digits_text = self.calibri_60_font.render(
-                    "Should be: " + pi_digits[len(self.user_input):len(self.user_input)+10] + "...",
-                    True, 'yellow')
-
-                self.correct_digits_rect = self.correct_digits_text.get_rect(
-                    center=(self.over_rect.centerx, self.over_rect.bottom + self.over_rect.height * 0.5)
-                )
-
-                self.screen.blit(self.correct_digits_text, self.correct_digits_rect)
 
 
             for event in pg.event.get():
@@ -1463,7 +1487,7 @@ class PiGame:
                     if self.back_button_rect.collidepoint(event.pos):
                         self.main_values()
                         self.challenge_screen_settings()
-                    if self.game_over == False:
+                    if self.game_over == False or self.goal_reached == False:
                         if self.switch_keys_layout_rect.collidepoint(event.pos):
                             self.keys_layout = 1 - self.keys_layout
                             self.challenge_screen_objects()
@@ -1473,7 +1497,6 @@ class PiGame:
                             if getattr(self, f'square_{i}_rect').collidepoint(event.pos):
                                 if self.draw_digits(str(i)):
                                     thinking_start_time = time.time()  # Reset thinking time
-
 
 
             pg.display.flip()
@@ -1486,6 +1509,6 @@ if __name__ == '__main__':
     game.main_screen()
 
 
-# Zrobic zakolorwanie goal na zielono po osiągnięciu celu, oraz napis  "conrats....." w tym miejscu gdzie game_over
+# Zrobic zakolorwanie goal na zielono po osiągnięciu celu, oraz napis  "congrats....." w tym miejscu gdzie game_over
 
 # W wolnym czasie poprawić sposób rozmieszczania cyfr na learning screenie zeby adaptowało się to do mniejszych ekranów
