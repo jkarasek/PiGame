@@ -379,6 +379,27 @@ class PiGame:
             center=(self.page_number_plus.centerx, self.page_change_multiplier_minus.centery)
         )
 
+    # def create_text(self, text, font):
+    #     """Tworzy tekst z danej czcionki."""
+    #     return font.render(text, True, 'white')
+    #
+    # def create_rect(self, text_surface, center_x, center_y):
+    #     """Tworzy prostokąt dla danego tekstu."""
+    #     return text_surface.get_rect(center=(center_x, center_y))
+    #
+    # def create_button(self, text, font, center_x, center_y, width, height):
+    #     """Tworzy przycisk i tekst dla przycisku."""
+    #     button_text = self.create_text(text, font)
+    #     button_rect = pg.Rect(center_x - width / 2, center_y, width, height)
+    #     text_rect = button_text.get_rect(center=button_rect.center)
+    #     return button_text, button_rect, text_rect
+    #
+    # def create_counter(self, text, font, center_x, center_y):
+    #     """Tworzy licznik i jego prostokąt."""
+    #     counter_text = self.create_text(text, font)
+    #     counter_rect = counter_text.get_rect(center=(center_x, center_y))
+    #     return counter_text, counter_rect
+    #
     def training_screen_settings_objects(self):
         self.images_initialization()
 
@@ -405,6 +426,7 @@ class PiGame:
         )
 
         # Buttons and counters
+        # Start button
         self.start_button_text = self.candara_60_font.render("Start", True, 'white')
         self.start_button_rect = pg.Rect(
             self.training_mode_title_rect.centerx - self.screen_width * 0.08,
@@ -415,6 +437,7 @@ class PiGame:
             center=self.start_button_rect.center
         )
 
+        # Back button
         self.back_button_text = self.candara_60_font.render("Back", True, 'white')
         self.back_button_rect = pg.Rect(
             self.start_button_rect.left,
@@ -425,12 +448,14 @@ class PiGame:
             center=self.back_button_rect.center
         )
 
+        # Start point counter
         self.start_digit_counter_text = self.candara_50_font.render(str(self.start_digit_counter), True, 'white')
         self.start_digit_counter_rect = self.start_digit_counter_text.get_rect(
             center=(self.start_digit_rect.centerx,
                     self.start_digit_rect.bottom + self.start_digit_rect.height)
         )
 
+        # Start point multiplier counter
         self.digit_multiplier_counter_text = self.candara_50_font.render(
             "x" + str(self.digit_multiplier_counter), True, 'white')
         self.digit_multiplier_counter_rect = self.digit_multiplier_counter_text.get_rect(
@@ -1103,9 +1128,35 @@ class PiGame:
                     # Squares with digits
                     for i in range(10):
                         if getattr(self, f'square_{i}_rect').collidepoint(event.pos):
-                            self.draw_digits(str(i))
-                            reset_time = time.time()
-                            self.next_correct_digit = None
+                            self.draw_digits(str(i))    # Writing a digit
+                            reset_time = time.time()    # Time resetting
+                            self.next_correct_digit = None  # Correct digit resetting
+
+                # Keyboard writing option
+                elif event.type == pg.KEYDOWN:
+                    print(f'Key pressed: {event.key}')  # Debug line
+                    if self.switch_position == 1:
+                        # For main number keys
+                        if pg.K_0 <= event.key <= pg.K_9:
+                            digit = event.key - pg.K_0  # Converting main number key to digit (0-9)
+                            self.draw_digits(str(digit))  # Writing a digit
+                            reset_time = time.time()  # Time resetting
+                            self.next_correct_digit = None  # Correct digit resetting
+
+                        # For numpad keys
+                        elif 1073741913 <= event.key <= 1073741921:  # Keys from 1 to 9
+                            digit = event.key - 1073741912  # Converting numeric key to digit (0-9)
+                            self.draw_digits(str(digit))  # Writing a digit
+                            reset_time = time.time()  # Time resetting
+                            self.next_correct_digit = None  # Correct digit resetting
+
+                        elif event.key == 1073741922:  # Key 0 on numeric keyboard
+                            self.draw_digits("0")  # Writing a digit 0
+                            reset_time = time.time()  # Time resetting
+                            self.next_correct_digit = None  # Correct digit resetting
+
+                pg.display.flip()
+                self.clock.tick(60)
 
             pg.display.flip()
             self.clock.tick(60)
@@ -1458,7 +1509,7 @@ class PiGame:
                         challenge_running = False
                         self.main_values()
                         self.challenge_screen_settings()
-                    if self.game_over == False or self.goal_reached == False:
+                    if self.game_over == False and self.goal_reached == False:
                         if self.switch_keys_layout_rect.collidepoint(event.pos):
                             self.keys_layout = 1 - self.keys_layout
                             self.challenge_screen_objects()
@@ -1467,7 +1518,30 @@ class PiGame:
                         for i in range(10):
                             if getattr(self, f'square_{i}_rect').collidepoint(event.pos):
                                 if self.draw_digits(str(i)):
-                                    thinking_start_time = time.time()  # Reset thinking time
+                                    thinking_start_time = time.time()  # Reset thinking time (if digit is correct)
+
+                # Keyboard writing option
+                elif event.type == pg.KEYDOWN:
+                    if self.game_over == False or self.goal_reached == False:
+                        if self.switch_position == 1:
+                            # For main number keys
+                            if pg.K_0 <= event.key <= pg.K_9:
+                                digit = event.key - pg.K_0  # Converting main number key to digit (0-9)
+                                if self.draw_digits(str(digit)):  # Writing a digit
+                                    thinking_start_time = time.time()  # Reset thinking time (if digit is correct)
+                                self.next_correct_digit = None  # Correct digit resetting
+
+                            # For numpad keys
+                            elif 1073741913 <= event.key <= 1073741921:  # Keys from 1 to 9
+                                digit = event.key - 1073741912  # Converting numeric key to digit (0-9)
+                                if self.draw_digits(str(digit)):  # Writing a digit
+                                    thinking_start_time = time.time()  # Reset thinking time (if digit is correct)
+                                self.next_correct_digit = None  # Correct digit resetting
+
+                            elif event.key == 1073741922:  # Key 0 on numeric keyboard
+                                if self.draw_digits("0"):  # Writing a digit 0
+                                    thinking_start_time = time.time()  # Reset thinking time (if digit is correct)
+                                self.next_correct_digit = None  # Correct digit resetting
 
             pg.display.flip()
             self.clock.tick(60)
