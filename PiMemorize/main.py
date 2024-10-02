@@ -76,12 +76,8 @@ class PiGame:
         while main_running:
             self.screen.fill('black')
 
-            # Text displayed
-            title_text = self.calibri_40_font.render("PiGameLogo", True, 'white')
-            title_rect = title_text.get_rect(center=(self.screen_width * 0.5, self.screen_height * 0.20))
-
-            # Text drawing on the screen
-            self.screen.blit(title_text, title_rect)
+            # Logo displayed
+            self.screen.blit(self.logo_image, self.game_logo)
 
             # Drawing buttons
             pg.draw.rect(self.screen, 'white', self.learning_button_rect, 3)
@@ -99,7 +95,7 @@ class PiGame:
                     main_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.quit_button_rect.collidepoint(event.pos):
-                        main_running = False
+                        exit()
                     if self.learning_button_rect.collidepoint(event.pos):
                         self.learning_screen()
                     if self.training_button_rect.collidepoint(event.pos):
@@ -163,7 +159,6 @@ class PiGame:
                 if self.digits_on_page_counter_top > 1000000:
                     self.digits_on_page_counter_top = 1000000
 
-
                 # Digits in page counter drawing
                 self.learning_screen_objects()
                 self.screen.blit(self.digits_on_page_counter_text, self.digits_on_page_counter_rect)
@@ -184,8 +179,11 @@ class PiGame:
         switch_off_image = pg.image.load('images/switch_off.png')
         switch_neutral_image = pg.image.load('images/switch_neutral.png')
         heart_image = pg.image.load('images/heart.png')
+        logo_image = pg.image.load('images/logo.png')
 
         # Scaling images
+        self.logo_image = pg.transform.scale(logo_image, (self.screen_width * 0.23, self.screen_height * 0.16))
+
         self.minus_image = pg.transform.scale(minus_image, (self.screen_width * 0.035, self.screen_width * 0.035))
         self.plus_image = pg.transform.scale(plus_image, (self.screen_width * 0.035, self.screen_width * 0.035))
 
@@ -274,7 +272,7 @@ class PiGame:
         self.quit_button_text = self.cambria_35_font.render("Quit", True, 'white')
 
         # Rectangles (buttons)
-        self.learning_button_rect = pg.Rect(self.screen_width * 0.42, self.screen_height * 0.30,
+        self.learning_button_rect = pg.Rect(self.screen_width * 0.42, self.screen_height * 0.35,
                                             self.screen_width * 0.16, self.screen_height * 0.08)
         self.training_button_rect = pg.Rect(self.learning_button_rect.left, self.learning_button_rect.bottom + 20,
                                             self.screen_width * 0.16, self.screen_height * 0.08)
@@ -290,6 +288,9 @@ class PiGame:
         self.quit_button_text_rect = self.quit_button_text.get_rect(center=self.quit_button_rect.center)
 
         # Images rectangles
+        self.game_logo = self.logo_image.get_rect(
+            center=(self.screen_width * 0.5, self.screen_height * 0.20)
+        )
 
     def learning_screen_objects(self):
         self.images_initialization()
@@ -829,7 +830,8 @@ class PiGame:
                     learning_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.l_s_back_button_rect.collidepoint(event.pos):
-                        return
+                        learning_running = False
+                        self.main_screen()
 
                     # digits_in_columns - and + handling
                     if self.digits_in_columns_minus.collidepoint(event.pos):
@@ -926,8 +928,10 @@ class PiGame:
                     training_settings_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.back_button_rect.collidepoint(event.pos):
+                        training_settings_running = False
                         self.main_screen()
                     if self.start_button_rect.collidepoint(event.pos):
+                        training_settings_running = False
                         self.training_screen()
 
                     # start_digit - and + handling
@@ -1078,6 +1082,7 @@ class PiGame:
                     training_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.back_button_rect.collidepoint(event.pos):
+                        training_running = False
                         self.main_values()
                         self.training_screen_settings()
                     if self.switch_on.collidepoint(event.pos):
@@ -1206,8 +1211,10 @@ class PiGame:
                     challenge_settings_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.back_button_rect.collidepoint(event.pos):
+                        challenge_settings_running = False
                         self.main_screen()
                     if self.start_button_rect.collidepoint(event.pos):
+                        challenge_settings_running = False
                         self.challenge_screen()
 
                     # Start digit - and + handling
@@ -1448,6 +1455,7 @@ class PiGame:
                     challenge_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.back_button_rect.collidepoint(event.pos):
+                        challenge_running = False
                         self.main_values()
                         self.challenge_screen_settings()
                     if self.game_over == False or self.goal_reached == False:
@@ -1468,6 +1476,3 @@ class PiGame:
 if __name__ == '__main__':
     game = PiGame()
     game.main_screen()
-
-
-# W wolnym czasie poprawić sposób rozmieszczania cyfr na learning screenie zeby adaptowało się to do mniejszych ekranów
