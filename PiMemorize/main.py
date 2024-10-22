@@ -98,9 +98,9 @@ class PiGame:
         rect = rendered_text.get_rect(center=(x, y))
         return rendered_text, rect
 
-    def create_button_and_rect(self, text, font_name, size, x, y, rect_width, rect_height):
+    def create_button_and_rect(self, text, font_name, size, x, y, rect_width, rect_height, color='white'):
         """Creates the button text and its rectangle based on specified parameters."""
-        button_text = self.fonts[font_name][size].render(text, True, 'white')
+        button_text = self.fonts[font_name][size].render(text, True, color)
         button_rect = pg.Rect(x, y, rect_width, rect_height)
         text_rect = button_text.get_rect(center=button_rect.center)
 
@@ -198,22 +198,27 @@ class PiGame:
 
         # Buttons creating using the new create_button_and_rect
         self.learning_button_text, self.learning_button_rect, self.learning_button_text_rect = self.create_button_and_rect(
-            "Learning", 'cambria', 35, self.screen_width * 0.42, self.screen_height * 0.4,
+            "Learning", 'cambria', 35, self.screen_width * 0.42, self.screen_height * 0.37,
                                        self.screen_width * 0.16, self.screen_height * 0.08
         )
         self.training_button_text, self.training_button_rect, self.training_button_text_rect = self.create_button_and_rect(
             "Training", 'cambria', 35, self.learning_button_rect.x,
-            self.learning_button_rect.bottom + self.learning_button_rect.height * 0.3,
+            self.learning_button_rect.bottom + self.learning_button_rect.height * 0.2,
             self.screen_width * 0.16, self.screen_height * 0.08
         )
         self.challenge_button_text, self.challenge_button_rect, self.challenge_button_text_rect = self.create_button_and_rect(
             "Challenge", 'cambria', 35, self.training_button_rect.x,
-            self.training_button_rect.bottom + self.training_button_rect.height * 0.3,
+            self.training_button_rect.bottom + self.training_button_rect.height * 0.2,
+            self.screen_width * 0.16, self.screen_height * 0.08
+        )
+        self.ranking_button_text, self.ranking_button_rect, self.ranking_button_text_rect = self.create_button_and_rect(
+            "High Scores", 'cambria', 35, self.challenge_button_rect.x,
+            self.challenge_button_rect.bottom + self.challenge_button_rect.height * 0.2,
             self.screen_width * 0.16, self.screen_height * 0.08
         )
         self.quit_button_text, self.quit_button_rect, self.quit_button_text_rect = self.create_button_and_rect(
             "Quit", 'cambria', 35, self.challenge_button_rect.x,
-            self.challenge_button_rect.bottom + self.challenge_button_rect.height * 1.7,
+            self.challenge_button_rect.bottom + self.challenge_button_rect.height * 1.95,
             self.screen_width * 0.16, self.screen_height * 0.08
         )
 
@@ -565,6 +570,59 @@ class PiGame:
         # Main settings (50, 20)
         self.x, self.columns = settings.get(self.digits_in_columns_counter, (50, 20))
 
+    def nickname_screen(self):
+        input_active = False  # Inactive insert box for start
+        color_inactive = 'lightskyblue'
+        color_active = 'dodgerblue2'
+        color = color_inactive
+        x_offset = 0
+
+        nick_rect = pg.Rect(self.screen_width * 0.45, self.screen_height * 0.45, self.screen_width * 0.16, self.screen_height * 0.08)
+        text = ''
+        nick_inserted = False
+
+        while not nick_inserted:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    nick_inserted = True
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    if nick_rect.collidepoint(event.pos):
+                        input_active = True
+                        color = color_active
+                    else:
+                        input_active = False
+                        color = color_inactive
+                elif event.type == pg.KEYDOWN:
+                    if input_active:
+                        if event.key == pg.K_RETURN:
+                            self.player_nick = text  # Zapisanie nicku do zmiennej
+                            nick_inserted = True  # Przejście dalej po naciśnięciu Enter
+                        elif event.key == pg.K_BACKSPACE:
+                            text = text[:-1]  # Usuwanie ostatniego znaku
+                        else:
+                            text += event.unicode  # Dodanie wprowadzonego znaku
+
+            self.screen.fill('black')
+
+            # "Enter your nickname" text
+            prompt_text, prompt_rect = self.create_text_and_rect("Enter your nickname:", 'cambria', 35, self.screen_width * 0.5, self.screen_height * 0.35)
+            self.screen.blit(prompt_text, prompt_rect)
+
+            # Inserted text rendering
+            nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35, self.screen_width * 0.42 - x_offset, self.screen_height * 0.45, self.screen_width * 0.16 + x_offset * 2, self.screen_height * 0.08, color=color)
+            if nick_rect.right - nick_text_rect.right < 25:
+                x_offset += 17.5
+            elif nick_rect.width > self.screen_width * 0.16 and nick_rect.right - nick_text_rect.right > 25:
+                x_offset -= 17.5
+                nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35, self.screen_width * 0.42 - x_offset, self.screen_height * 0.45, self.screen_width * 0.16 + x_offset * 2, self.screen_height * 0.08, color=color)
+
+            self.draw_button(nick_rect, nick_text, nick_text_rect, color=color)
+
+            pg.display.flip()
+            self.clock.tick(30)
+
+        return self.player_nick  # Nick returning after inserting
+
     def main_screen(self):
         main_running = True
         self.main_screen_objects()
@@ -579,6 +637,7 @@ class PiGame:
             self.draw_button(self.learning_button_rect, self.learning_button_text, self.learning_button_text_rect)
             self.draw_button(self.training_button_rect, self.training_button_text, self.training_button_text_rect)
             self.draw_button(self.challenge_button_rect, self.challenge_button_text, self.challenge_button_text_rect)
+            self.draw_button(self.ranking_button_rect, self.ranking_button_text, self.ranking_button_text_rect)
             self.draw_button(self.quit_button_rect, self.quit_button_text, self.quit_button_text_rect)
 
             for event in pg.event.get():
@@ -593,6 +652,8 @@ class PiGame:
                         self.training_screen_settings()
                     if self.challenge_button_rect.collidepoint(event.pos):
                         self.challenge_screen_settings()
+                    if self.ranking_button_rect.collidepoint(event.pos):
+                        pass
 
             pg.display.flip()
             self.clock.tick(60)  # Screen refresh frequency
@@ -1145,6 +1206,8 @@ class PiGame:
         def handle_button_clicks(event_pos):
             nonlocal challenge_running, thinking_start_time
             if self.back_button_rect.collidepoint(event_pos):
+                if self.goal_reached:
+                    nick = self.nickname_screen()
                 challenge_running = False
                 self.main_values()
                 self.challenge_screen_settings()
@@ -1214,3 +1277,7 @@ class PiGame:
 if __name__ == '__main__':
     game = PiGame()
     game.main_screen()
+
+# Klawiatura (wpisywanie)
+# Wyszarzone cyfry
+# Ranking
