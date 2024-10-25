@@ -1,3 +1,4 @@
+import os
 import pygame as pg
 import time
 
@@ -18,11 +19,11 @@ class PiGame:
 
     def setup_fonts(self):
         pg.font.init()
-        sizes = [96, 72, 60, 55, 50, 40]
+        sizes = [96, 80, 75, 72, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25]
         self.fonts = {
             'candara': {size: pg.font.SysFont('candara', size) for size in sizes},
             'calibri': {size: pg.font.SysFont('calibri', size) for size in sizes},
-            'cambria': {35: pg.font.SysFont('cambria', size) for size in sizes}
+            'cambria': {size: pg.font.SysFont('cambria', size) for size in sizes}
         }
 
     def main_values(self):
@@ -211,7 +212,7 @@ class PiGame:
             self.training_button_rect.bottom + self.training_button_rect.height * 0.2,
             self.screen_width * 0.16, self.screen_height * 0.08
         )
-        self.ranking_button_text, self.ranking_button_rect, self.ranking_button_text_rect = self.create_button_and_rect(
+        self.highscores_button_text, self.highscores_button_rect, self.highscores_button_text_rect = self.create_button_and_rect(
             "High Scores", 'cambria', 35, self.challenge_button_rect.x,
             self.challenge_button_rect.bottom + self.challenge_button_rect.height * 0.2,
             self.screen_width * 0.16, self.screen_height * 0.08
@@ -571,21 +572,33 @@ class PiGame:
         self.x, self.columns = settings.get(self.digits_in_columns_counter, (50, 20))
 
     def nickname_screen(self):
-        input_active = False  # Inactive insert box for start
+        input_active = False  # Inactive insert box in the beginning
         color_inactive = 'lightskyblue'
         color_active = 'dodgerblue2'
         color = color_inactive
         x_offset = 0
+        nick_length = 20
 
-        nick_rect = pg.Rect(self.screen_width * 0.45, self.screen_height * 0.45, self.screen_width * 0.16, self.screen_height * 0.08)
+        # Nick inserting box initialization
+        nick_rect = pg.Rect(self.screen_width * 0.5, self.screen_height * 0.45, self.screen_width * 0.16, self.screen_height * 0.08)
         text = ''
         nick_inserted = False
+
+        # Submit button
+        submit_text, submit_rect, submit_text_rect = self.create_button_and_rect("Submit", 'cambria', 35,
+                                                                                 nick_rect.x - self.screen_width * 0.06,
+                                                                                 nick_rect.bottom + nick_rect.height * 0.6,
+                                                                                 self.screen_width * 0.12,
+                                                                                 self.screen_height * 0.08)
 
         while not nick_inserted:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     nick_inserted = True
                 elif event.type == pg.MOUSEBUTTONDOWN:
+                    if submit_rect.collidepoint(event.pos):
+                        self.player_nick = text  # Nick saving
+                        nick_inserted = True  # Submit inserted nick
                     if nick_rect.collidepoint(event.pos):
                         input_active = True
                         color = color_active
@@ -595,17 +608,19 @@ class PiGame:
                 elif event.type == pg.KEYDOWN:
                     if input_active:
                         if event.key == pg.K_RETURN:
-                            self.player_nick = text  # Zapisanie nicku do zmiennej
-                            nick_inserted = True  # Przejście dalej po naciśnięciu Enter
+                            self.player_nick = text  # Nick saving
+                            nick_inserted = True  # Submit inserted nick
                         elif event.key == pg.K_BACKSPACE:
-                            text = text[:-1]  # Usuwanie ostatniego znaku
+                            text = text[:-1]  # Last character deleting
                         else:
-                            text += event.unicode  # Dodanie wprowadzonego znaku
-
+                            if len(text) < nick_length:  # Nick max length
+                                text += event.unicode  # Character adding
+            if text == '':
+                self.player_nick = 'Player'
             self.screen.fill('black')
 
             # "Enter your nickname" text
-            prompt_text, prompt_rect = self.create_text_and_rect("Enter your nickname:", 'cambria', 35, self.screen_width * 0.5, self.screen_height * 0.35)
+            prompt_text, prompt_rect = self.create_text_and_rect("Enter your nickname:", 'candara', 60, self.screen_width * 0.5, self.screen_height * 0.35)
             self.screen.blit(prompt_text, prompt_rect)
 
             # Inserted text rendering
@@ -616,7 +631,9 @@ class PiGame:
                 x_offset -= 17.5
                 nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35, self.screen_width * 0.42 - x_offset, self.screen_height * 0.45, self.screen_width * 0.16 + x_offset * 2, self.screen_height * 0.08, color=color)
 
+            # Buttons drawing
             self.draw_button(nick_rect, nick_text, nick_text_rect, color=color)
+            self.draw_button(submit_rect, submit_text, submit_text_rect, 'green')
 
             pg.display.flip()
             self.clock.tick(30)
@@ -637,7 +654,7 @@ class PiGame:
             self.draw_button(self.learning_button_rect, self.learning_button_text, self.learning_button_text_rect)
             self.draw_button(self.training_button_rect, self.training_button_text, self.training_button_text_rect)
             self.draw_button(self.challenge_button_rect, self.challenge_button_text, self.challenge_button_text_rect)
-            self.draw_button(self.ranking_button_rect, self.ranking_button_text, self.ranking_button_text_rect)
+            self.draw_button(self.highscores_button_rect, self.highscores_button_text, self.highscores_button_text_rect)
             self.draw_button(self.quit_button_rect, self.quit_button_text, self.quit_button_text_rect)
 
             for event in pg.event.get():
@@ -652,8 +669,8 @@ class PiGame:
                         self.training_screen_settings()
                     if self.challenge_button_rect.collidepoint(event.pos):
                         self.challenge_screen_settings()
-                    if self.ranking_button_rect.collidepoint(event.pos):
-                        pass
+                    if self.highscores_button_rect.collidepoint(event.pos):
+                        self.highscores_screen()
 
             pg.display.flip()
             self.clock.tick(60)  # Screen refresh frequency
@@ -1150,6 +1167,8 @@ class PiGame:
 
     def challenge_screen(self):
         challenge_running = True
+        nick = None
+        mistakes_allowed = self.mistakes_allowed_counter
         self.challenge_screen_objects()
 
         start_time = time.time()
@@ -1158,11 +1177,14 @@ class PiGame:
         self.user_input = []
         self.incorrect_square_number = None
         self.goal_reached = False
+        self.average_thinking_time = 0  # Średni czas myślenia
+
+        total_time = None  # Zmienna na czas zakończenia challengu
 
         self.max_display_digits = int(self.guessing_rect.width / 37.53)
 
         def draw_texts():
-            formatted_time = time.strftime('%M:%S', time.gmtime(self.training_elapsed_time))
+            formatted_time = f'{time.strftime("%M:%S", time.gmtime(self.training_elapsed_time))}.{int((self.training_elapsed_time % 1) * 100):02d}'
             time_color = 'red' if self.game_over else 'green' if self.goal_reached else 'white'
             time_text = self.fonts['calibri'][72].render(formatted_time, True, time_color)
             time_rect = time_text.get_rect(
@@ -1182,6 +1204,18 @@ class PiGame:
 
             self.guessing_rect_drawing()
 
+        def update_thinking_times():
+            """Aktualizuje listę czasów myślenia i oblicza średni czas"""
+            nonlocal thinking_start_time
+            thinking_times = []  # Lista przechowująca czasy myślenia
+            total_thinking_time = 0  # Łączny czas myślenia
+
+            current_thinking_time = time.time() - thinking_start_time
+            thinking_times.append(current_thinking_time)
+            total_thinking_time += current_thinking_time
+            self.average_thinking_time = total_thinking_time / len(thinking_times)
+            thinking_start_time = time.time()  # Reset startu czasu myślenia
+
         def draw_elements():
             self.hearts_drawing()
             pg.draw.rect(self.screen, 'white', self.guessing_rect, width=3)
@@ -1197,17 +1231,21 @@ class PiGame:
                     pg.draw.rect(self.screen, 'white', getattr(self, f'square_{i}_rect'), 5)
                     self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
 
-                    # Checking if wrong square clicked
+                # Checking if wrong square clicked
                 if self.incorrect_square_number:
                     i = self.incorrect_square_number
                     pg.draw.rect(self.screen, 'red', getattr(self, f'square_{i}_rect'), 5)
                     self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
 
         def handle_button_clicks(event_pos):
-            nonlocal challenge_running, thinking_start_time
+            nonlocal challenge_running, thinking_start_time, nick, total_time, mistakes_allowed
             if self.back_button_rect.collidepoint(event_pos):
                 if self.goal_reached:
                     nick = self.nickname_screen()
+                    digits = self.goal_digit_counter
+                    mistakes_ratio = str(f"{mistakes_allowed - self.mistakes_allowed_counter}/{mistakes_allowed}")
+                    score = self.calculate_score(digits, self.average_thinking_time, self.thinking_time_counter, total_time, mistakes_allowed - self.mistakes_allowed_counter, mistakes_allowed)
+                    self.save_to_highscores(nick, digits, self.average_thinking_time, total_time, mistakes_ratio, score)
                 challenge_running = False
                 self.main_values()
                 self.challenge_screen_settings()
@@ -1218,7 +1256,7 @@ class PiGame:
                 for i in range(10):
                     if getattr(self, f'square_{i}_rect').collidepoint(event_pos):
                         if self.draw_digits(str(i)):
-                            thinking_start_time = time.time()
+                            update_thinking_times()  # Zaktualizuj czas myślenia
 
         def handle_key_events(event_key):
             nonlocal thinking_start_time
@@ -1226,11 +1264,11 @@ class PiGame:
                 if pg.K_0 <= event_key <= pg.K_9:
                     digit = event_key - pg.K_0
                     if self.draw_digits(str(digit)):
-                        thinking_start_time = time.time()
+                        update_thinking_times()  # Zaktualizuj czas myślenia
                 elif 1073741913 <= event_key <= 1073741922:
                     digit = event_key - 1073741912 if event_key != 1073741922 else 0
                     if self.draw_digits(str(digit)):
-                        thinking_start_time = time.time()
+                        update_thinking_times()  # Zaktualizuj czas myślenia
 
         while challenge_running:
             self.training_screen_objects()
@@ -1241,6 +1279,15 @@ class PiGame:
                 self.thinking_elapsed_time = time.time() - thinking_start_time
                 if self.thinking_elapsed_time >= self.thinking_time_counter:
                     self.game_over = True
+
+            # Zapis total_time po osiągnięciu celu
+            if self.digit_counter - 1 == self.goal_digit_counter:
+                if total_time is None:
+                    total_time = time.time() - start_time
+                self.goal_reached = True
+                self.goal_text = self.fonts['candara'][60].render(f"Goal: {self.goal_digit_counter}", True, 'green')
+                self.screen.blit(self.win_main_text, self.win_main_rect)
+                self.screen.blit(self.win_second_text, self.win_second_rect)
 
             # Drawing
             draw_texts()
@@ -1256,11 +1303,6 @@ class PiGame:
                 correct_digits_rect = correct_digits_text.get_rect(
                     center=(self.over_rect.centerx, self.over_rect.bottom + self.over_rect.height * 0.5))
                 self.screen.blit(correct_digits_text, correct_digits_rect)
-            elif self.digit_counter - 1 == self.goal_digit_counter:
-                self.goal_reached = True
-                self.goal_text = self.fonts['candara'][60].render(f"Goal: {self.goal_digit_counter}", True, 'green')
-                self.screen.blit(self.win_main_text, self.win_main_rect)
-                self.screen.blit(self.win_second_text, self.win_second_rect)
 
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -1273,6 +1315,115 @@ class PiGame:
             pg.display.flip()
             self.clock.tick(60)
 
+    def calculate_score(self, digits_inserted, avg_thinking_time, time_for_thinking, total_time, mistakes_made, mistakes_allowed):
+        digits_inserted_points = digits_inserted * 2.6
+        thinking_time_points = 0.5 * (65 - time_for_thinking) + (10 * (1/avg_thinking_time+0.1))
+        total_time_points = (15 * digits_inserted) * (1/total_time)
+        mistakes_points = (5 * (5 - mistakes_made)) * (5 * (1/mistakes_allowed))
+
+        # Final score calculation
+        if self.player_nick == "Maks":
+            score = 0
+        else:
+            score = int(digits_inserted_points + thinking_time_points + total_time_points + mistakes_points)
+        return max(0, score)
+
+    def highscores_screen_objects(self):
+        """Initialize objects for the highscores screen"""
+        self.highscores_title_text, self.highscores_title_rect = self.create_text_and_rect(
+            "High Scores", 'cambria', 75, self.screen_width * 0.5, self.screen_height * 0.1)
+        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
+            "Back", 'candara', 60, self.highscores_title_rect.centerx - self.screen_width * 0.1, self.screen_height * 0.80,
+                                   self.screen_width * 0.20, self.screen_height * 0.1
+        )
+
+        highscores_labels = ["Nick", "Digits", "Avg Thinking Time", "Total Time", "Mistakes Ratio", "Score"]
+        self.highscore_labels_texts_rects = []
+        x_offset = 0
+
+        # Create labels
+        for i, label in enumerate(highscores_labels):
+            # Tworzenie etykiety tekstowej
+            label_text, label_rect = self.create_text_and_rect(
+                highscores_labels[i], 'cambria', 35, self.screen_width * 0.125 + x_offset, self.screen_height * 0.2
+            )
+            # Dodanie tekstu i prostokąta do listy
+            self.highscore_labels_texts_rects.append((label_text, label_rect))
+            x_offset += self.screen_width * 0.15
+
+    def highscores_screen(self):
+        """Highscores screen logic"""
+        highscores_running = True
+        self.highscores_screen_objects()
+
+        highscores_list = self.read_from_highscores()
+
+        while highscores_running:
+            self.screen.fill('black')
+
+            # Display title
+            self.screen.blit(self.highscores_title_text, self.highscores_title_rect)
+
+            # Display labels
+            for label_text, label_rect in self.highscore_labels_texts_rects:
+                self.screen.blit(label_text, label_rect)
+
+                # Display each highscore in columns under corresponding labels
+                y_offset = self.screen_height * 0.3  # Initial Y position for values
+                for entry in highscores_list:
+                    x_offset = self.screen_width * 0.125  # Reset X position for each row
+                    for value in entry:
+                        # Display value under corresponding label
+                        value_text = self.create_text(str(value), 'cambria', 25)
+                        value_rect = value_text.get_rect(center=(x_offset, y_offset))
+                        self.screen.blit(value_text, value_rect)
+                        x_offset += self.screen_width * 0.15  # Move to the next column
+                    y_offset += 40  # Move down for the next row of values
+
+            # Display back button
+            self.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    highscores_running = False
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    if self.back_button_rect.collidepoint(event.pos):
+                        highscores_running = False  # Return to the main screen
+
+            pg.display.flip()
+            self.clock.tick(60)
+
+    def save_to_highscores(self, nick, digits, avg_thinking_time, total_time, mistakes_ratio, score):
+        """Save a new highscore to the file with two decimal places"""
+        highscores_list = self.read_from_highscores()
+
+        # Dodaj nowy wynik i posortuj listę malejąco wg. wyniku
+        highscores_list.append((nick, digits, f"{avg_thinking_time:.2f}/{self.thinking_time_counter:.2f}", f"{total_time:.2f}", mistakes_ratio, int(score)))
+        highscores_list = sorted(highscores_list, key=lambda x: float(x[5]), reverse=True)[
+                          :10]  # Sortowanie po ilosci cyfr
+
+        # Zapisz zaktualizowaną listę wyników z powrotem do pliku
+        with open('highscores.txt', 'w') as file:
+            for nick, digits, avg_thinking_time, total_time, mistakes_ratio, score in highscores_list:
+                file.write(f"{nick},{digits},{avg_thinking_time},{total_time},{mistakes_ratio},{score}\n")
+
+
+    def read_from_highscores(self):
+        """Read highscores from the file and return them as a list of tuples (name, score)"""
+        if not os.path.exists('highscores.txt'):
+            return []  # Return an empty list if the file doesn't exist
+
+        highscores_list = []
+        try:
+            with open('highscores.txt', 'r') as file:
+                for line in file:
+                    nick, digits, avg_thinking_time, total_time, mistakes_ratio, score = line.strip().split(',')
+                    highscores_list.append((nick, digits, avg_thinking_time, total_time, mistakes_ratio, score))
+        except FileNotFoundError:
+            pass
+
+        return highscores_list
+
 
 if __name__ == '__main__':
     game = PiGame()
@@ -1280,4 +1431,3 @@ if __name__ == '__main__':
 
 # Klawiatura (wpisywanie)
 # Wyszarzone cyfry
-# Ranking
