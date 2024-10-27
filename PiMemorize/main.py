@@ -1,5 +1,6 @@
 import os
 import pygame as pg
+import pygame_gui
 import time
 
 
@@ -11,6 +12,9 @@ class PiGame:
         self.setup_fonts()
         self.main_values()
         self.images_initialization()
+
+        # Dodajemy manager GUI
+        self.manager = pygame_gui.UIManager((self.screen.get_width(), self.screen.get_height()))
 
     def setup_display(self):
         self.screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
@@ -89,6 +93,9 @@ class PiGame:
                                                            (self.screen_width * 0.06, self.screen_width * 0.03))
         self.images['heart'] = pg.transform.scale(self.images['heart'],
                                                   (self.screen_width * 0.038, self.screen_width * 0.034))
+
+    def add_gui_manager(self):
+        pass
 
     def create_text(self, text, font_name, size, color='white'):
         return self.fonts[font_name][size].render(text, True, color)
@@ -774,6 +781,21 @@ class PiGame:
         self.main_values()
         self.training_screen_settings_objects()
 
+        # Parametry pól tekstowych do manager GUI
+        text_entries_data = [
+            ('start_digit_counter', self.start_digit_counter_rect),
+        ]
+
+        # Tworzenie pól tekstowych i ich ukrycie
+        self.text_entries = {}
+        for name, rect in text_entries_data:
+            entry = pygame_gui.elements.UITextEntryLine(
+                relative_rect=pg.Rect((rect.left-5, rect.top), (60, 60)),
+                manager=self.manager)
+            entry.hide()
+            self.text_entries[name] = entry
+
+
         def draw_texts():
             self.screen.blit(self.training_mode_title_text, self.training_mode_title_rect)
             self.screen.blit(self.choose_start_point_text, self.choose_start_point_rect)
@@ -799,6 +821,15 @@ class PiGame:
                 self.training_screen()
                 return False  # Start the training screen
 
+            # Obsługa pól tekstowych przy kliknięciu
+            for name, rect in text_entries_data:
+                if rect.collidepoint(event.pos):
+                    entry = self.text_entries[name]
+                    entry.set_text(str(getattr(self, name)))
+                    entry.show()
+                    entry.focus()
+                    return True
+
             # Handle start_digit - and + buttons
             if self.start_digit_minus.collidepoint(event_pos):
                 self.start_digit_counter = max(1, self.start_digit_counter - self.digit_multiplier_counter)
@@ -822,6 +853,7 @@ class PiGame:
             return True  # Continue running
 
         while training_settings_running:
+            time_delta = self.clock.tick(60) / 1000.0
             self.screen.fill((58, 58, 58))  # Dark gray background
 
             # Drawing
@@ -839,6 +871,19 @@ class PiGame:
                     training_settings_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     training_settings_running = handle_button_clicks(event.pos)
+                elif event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
+                    for name, entry in self.text_entries.items():
+                        if event.ui_element == entry:
+                            setattr(self, name, int(event.text))
+                            entry.hide()
+                            self.training_screen_settings_objects()
+                            break
+
+                self.manager.process_events(event)
+
+            # Aktualizacja i rysowanie GUI
+            self.manager.update(time_delta)
+            self.manager.draw_ui(self.screen)
 
             pg.display.flip()
             self.clock.tick(60)  # Screen refresh rate
@@ -1030,6 +1075,22 @@ class PiGame:
         self.main_values()
         self.challenge_screen_settings_objects()
 
+        # Parametry pól tekstowych do manager GUI
+        text_entries_data = [
+            ('start_digit_counter', self.start_digit_counter_rect),
+            ('goal_digit_counter', self.goal_digit_counter_rect),
+            ('thinking_time_counter', self.thinking_time_counter_rect),
+        ]
+
+        # Tworzenie pól tekstowych i ich ukrycie
+        self.text_entries = {}
+        for name, rect in text_entries_data:
+            entry = pygame_gui.elements.UITextEntryLine(
+                relative_rect=pg.Rect((rect.left-5, rect.top), (60, 60)),
+                manager=self.manager)
+            entry.hide()
+            self.text_entries[name] = entry
+
         def draw_texts():
             # Drawing titles and labels
             self.screen.blit(self.challenge_mode_title_text, self.challenge_mode_title_rect)
@@ -1087,6 +1148,15 @@ class PiGame:
                 self.challenge_screen()
                 return False  # Start the challenge screen
 
+            # Obsługa pól tekstowych przy kliknięciu
+            for name, rect in text_entries_data:
+                if rect.collidepoint(event.pos):
+                    entry = self.text_entries[name]
+                    entry.set_text(str(getattr(self, name)))
+                    entry.show()
+                    entry.focus()
+                    return True
+
             # Start digit handling
             if self.start_digit_minus.collidepoint(event.pos):
                 self.start_digit_counter = max(1, self.start_digit_counter - self.digit_multiplier_counter)
@@ -1132,6 +1202,7 @@ class PiGame:
             return True  # Continue running
 
         while challenge_settings_running:
+            time_delta = self.clock.tick(60) / 1000.0
             self.screen.fill((59, 59, 59))  # Dark gray background
 
             # Drawing
@@ -1149,9 +1220,22 @@ class PiGame:
                     challenge_settings_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     challenge_settings_running = handle_button_clicks()
+                elif event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
+                    for name, entry in self.text_entries.items():
+                        if event.ui_element == entry:
+                            setattr(self, name, int(event.text))
+                            entry.hide()
+                            update_counter_texts()
+                            break
+
+                self.manager.process_events(event)
+
+            # Aktualizacja i rysowanie GUI
+            self.manager.update(time_delta)
+            self.manager.draw_ui(self.screen)
 
             pg.display.flip()
-            self.clock.tick(60)  # Screen refresh rate
+            self.clock.tick(60)
 
     def hearts_drawing(self):
         if self.mistakes_allowed_counter:
@@ -1322,10 +1406,7 @@ class PiGame:
         mistakes_points = (5 * (5 - mistakes_made)) * (5 * (1/mistakes_allowed))
 
         # Final score calculation
-        if self.player_nick == "Maks":
-            score = 0
-        else:
-            score = int(digits_inserted_points + thinking_time_points + total_time_points + mistakes_points)
+        score = int(digits_inserted_points + thinking_time_points + total_time_points + mistakes_points)
         return max(0, score)
 
     def highscores_screen_objects(self):
@@ -1429,5 +1510,4 @@ if __name__ == '__main__':
     game = PiGame()
     game.main_screen()
 
-# Klawiatura (wpisywanie)
 # Wyszarzone cyfry
