@@ -94,9 +94,6 @@ class PiGame:
         self.images['heart'] = pg.transform.scale(self.images['heart'],
                                                   (self.screen_width * 0.038, self.screen_width * 0.034))
 
-    def add_gui_manager(self):
-        pass
-
     def create_text(self, text, font_name, size, color='white'):
         return self.fonts[font_name][size].render(text, True, color)
 
