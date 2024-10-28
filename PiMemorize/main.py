@@ -907,7 +907,7 @@ class PiGame:
             self.clock.tick(60)  # Screen refresh rate
 
     def guessing_rect_drawing(self):
-        # Displayed text `digits_str`
+        # Display the text of digits entered by the user
         digits_str = "".join(self.user_input[-self.max_display_digits:])
         guessed_digits_text = self.fonts['calibri'][72].render(f"{digits_str}", True, 'white')
 
@@ -918,18 +918,21 @@ class PiGame:
         self.guessed_digits_text_rect = guessed_digits_text.get_rect(
             center=(self.guessing_rect.right - self.digits_display_offset, self.guessing_rect.centery + 8))
 
-        # Calculate the maximum number of digits that can fit in `base_text`
+        # Calculate the maximum number of base digits to display based on available width
         single_digit_width, _ = self.fonts['calibri'][72].size("0")
         available_width_for_base_text = self.guessed_digits_text_rect.left - self.guessing_rect.left
         max_base_digits_display = int(available_width_for_base_text / single_digit_width)
 
-        # Trim `base_text` to the maximum number of digits
-        displayed_base_text_str = base_text_str[-max_base_digits_display:]
+        # Display `base_text` only if there is space left
+        displayed_base_text_str = base_text_str[-max_base_digits_display:] if len(
+            digits_str) < self.max_display_digits else ""
         base_text = self.fonts['calibri'][72].render(displayed_base_text_str, True, 'green')
 
-        # Set position for `base_text`
-        self.base_text_rect = base_text.get_rect(
-            center=(self.guessed_digits_text_rect.left - 0.5 * base_text.get_width(), self.guessing_rect.centery + 8))
+        # Set position for `base_text` only if it has content to display
+        if displayed_base_text_str:
+            self.base_text_rect = base_text.get_rect(
+                center=(
+                self.guessed_digits_text_rect.left - 0.5 * base_text.get_width(), self.guessing_rect.centery + 8))
 
         # Text indicating the digit number
         self.digit_number_text = self.fonts['calibri'][55].render(
@@ -937,7 +940,8 @@ class PiGame:
         self.digit_number_rect = self.digit_number_text.get_rect(
             center=(self.guessing_rect.centerx, self.guessing_rect.bottom + 0.4 * self.guessing_rect.height))
 
-        # Drawing
+        # Drawing elements
+        # if displayed_base_text_str:  # Only blit `base_text` if it has content
         self.screen.blit(base_text, self.base_text_rect)
         self.screen.blit(guessed_digits_text, self.guessed_digits_text_rect)
         self.screen.blit(self.digit_number_text, self.digit_number_rect)
