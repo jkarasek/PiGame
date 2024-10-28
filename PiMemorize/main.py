@@ -13,7 +13,7 @@ class PiGame:
         self.main_values()
         self.images_initialization()
 
-        # Dodajemy manager GUI
+        # GUI manager added
         self.manager = pygame_gui.UIManager((self.screen_width, self.screen_height))
 
     def setup_display(self):
@@ -65,6 +65,7 @@ class PiGame:
         self.goal_digit_multiplier_counter = 25
 
         self.game_over = False
+        self.user_input = []
 
     def images_initialization(self):
         self.images = {}
@@ -108,7 +109,7 @@ class PiGame:
         button_text = self.fonts[font_name][size].render(text, True, color)
         button_rect = pg.Rect(x, y, rect_width, rect_height)
 
-        # Tworzenie text_rect, z przesunięciem dla calibri
+        # Creating text_rect with fonts corrections
 
         if font_name == 'calibri':
             y_correction = 5
@@ -205,7 +206,7 @@ class PiGame:
             square_text = getattr(self, f'square_{i}_text')
             square_rect = getattr(self, f'square_{i}_rect')
 
-            # Dostosuj centrowanie - dodaj offset jeśli jest potrzebny, np. `+5` w pionie
+            # Fonts issue centering correction
             text_rect = square_text.get_rect(center=(square_rect.centerx, square_rect.centery + 10))
             setattr(self, f'square_{i}_text_rect', text_rect)
 
@@ -371,7 +372,7 @@ class PiGame:
             f"Hint after: {self.hint_counter} seconds", 'calibri', 40, self.hint_rect.centerx, self.hint_rect.centery,
             hint_color
         )
-        # Zmniejszenie rozmiaru prostokąta dla tekstu Hint
+        # Reducing the text_rect size (for better centering)
         self.hint_text_rect.inflate_ip(-10, -10)
 
         self.your_time_text, self.your_time_rect = self.create_text_and_rect(
@@ -518,10 +519,11 @@ class PiGame:
 
         # Texts
         self.goal_text, self.goal_rect = self.create_text_and_rect(
-            f"Goal: {self.goal_digit_counter}", 'candara', 60,
+            f"Goal: {self.goal_digit_counter - len(self.user_input)}", 'candara', 60,
             self.guessing_rect.left + self.screen_width * 0.12,
             self.guessing_rect.bottom + 2.8 * self.guessing_rect.height * 1.05
         )
+
 
         self.your_time_text, self.your_time_rect = self.create_text_and_rect(
             "Your time:", 'candara', 72, self.back_button_rect.centerx,
@@ -556,7 +558,6 @@ class PiGame:
         #     "[New Highscore]", 'calibri', 40,
         #     self.win_second_rect.centerx, self.win_second_rect.bottom + self.win_second_rect.height * 0.5, 'orange'
         # )
-
 
         # Buttons and counters
         self.switch_keys_layout_text, self.switch_keys_layout_rect, self.switch_keys_layout_text_rect = self.create_button_and_rect(
@@ -799,12 +800,12 @@ class PiGame:
         self.main_values()
         self.training_screen_settings_objects()
 
-        # Parametry pól tekstowych do manager GUI
+        # Text_entries parameters to GUI manager
         text_entries_data = [
             ('start_digit_counter', self.start_digit_counter_rect),
         ]
 
-        # Tworzenie pól tekstowych i ich ukrycie
+        # Creating text rectangles and hiding them
         self.text_entries = {}
         for name, rect in text_entries_data:
             entry = pygame_gui.elements.UITextEntryLine(
@@ -812,7 +813,6 @@ class PiGame:
                 manager=self.manager)
             entry.hide()
             self.text_entries[name] = entry
-
 
         def draw_texts():
             self.screen.blit(self.training_mode_title_text, self.training_mode_title_rect)
@@ -839,7 +839,7 @@ class PiGame:
                 self.training_screen()
                 return False  # Start the training screen
 
-            # Obsługa pól tekstowych przy kliknięciu
+            # Text entry handling after activation
             for name, rect in text_entries_data:
                 if rect.collidepoint(event.pos):
                     entry = self.text_entries[name]
@@ -899,7 +899,7 @@ class PiGame:
 
                 self.manager.process_events(event)
 
-            # Aktualizacja i rysowanie GUI
+            # Update and drawing GUI
             self.manager.update(time_delta)
             self.manager.draw_ui(self.screen)
 
@@ -919,7 +919,7 @@ class PiGame:
         self.guessed_digits_text_rect = guessed_digits_text.get_rect(
             center=(self.guessing_rect.right - self.digits_display_offset, self.guessing_rect.centery + 8))
         self.base_text_rect = base_text.get_rect(
-            center=(self.guessed_digits_text_rect.left - 0.5 * (base_text.width), self.guessing_rect.centery + 8))
+            center=(self.guessed_digits_text_rect.left - 0.5 * base_text.width, self.guessing_rect.centery + 8))
         self.digit_number_rect = self.digit_number_text.get_rect(
             center=(self.guessing_rect.centerx, self.guessing_rect.bottom + 0.4 * self.guessing_rect.height))
 
@@ -935,7 +935,6 @@ class PiGame:
         start_time = time.time()  # Start time initialization
         reset_time = time.time()  # Time of last interaction with digit squares
 
-        self.user_input = []
         self.incorrect_square_number = None
         self.next_correct_digit = None  # Initially no digit highlighted
 
@@ -1048,7 +1047,6 @@ class PiGame:
             draw_images()
             draw_digit_squares()
 
-
             # Checking if wrong square clicked
             if self.incorrect_square_number:
                 i = self.incorrect_square_number
@@ -1097,14 +1095,14 @@ class PiGame:
         self.main_values()
         self.challenge_screen_settings_objects()
 
-        # Parametry pól tekstowych do manager GUI
+        # Text_entries parameters to GUI manager
         text_entries_data = [
             ('start_digit_counter', self.start_digit_counter_rect),
             ('goal_digit_counter', self.goal_digit_counter_rect),
             ('thinking_time_counter', self.thinking_time_counter_rect),
         ]
 
-        # Tworzenie pól tekstowych i ich ukrycie
+        # Creating text rectangles and hiding them
         self.text_entries = {}
         for name, rect in text_entries_data:
             entry = pygame_gui.elements.UITextEntryLine(
@@ -1170,7 +1168,7 @@ class PiGame:
                 self.challenge_screen()
                 return False  # Start the challenge screen
 
-            # Obsługa pól tekstowych przy kliknięciu
+            # Text entry handling after activation
             for name, rect in text_entries_data:
                 if rect.collidepoint(event.pos):
                     entry = self.text_entries[name]
@@ -1252,7 +1250,7 @@ class PiGame:
 
                 self.manager.process_events(event)
 
-            # Aktualizacja i rysowanie GUI
+            # Update and drawing GUI
             self.manager.update(time_delta)
             self.manager.draw_ui(self.screen)
 
@@ -1280,12 +1278,11 @@ class PiGame:
         start_time = time.time()
         thinking_start_time = time.time()
 
-        self.user_input = []
         self.incorrect_square_number = None
         self.goal_reached = False
-        self.average_thinking_time = 0  # Średni czas myślenia
+        self.average_thinking_time = 0
 
-        total_time = None  # Zmienna na czas zakończenia challengu
+        total_time = None  # Time of challenge ending (initialization)
 
         self.max_display_digits = int(self.guessing_rect.width / 36.53)
 
@@ -1312,16 +1309,16 @@ class PiGame:
             self.guessing_rect_drawing()
 
         def update_thinking_times():
-            """Aktualizuje listę czasów myślenia i oblicza średni czas"""
+            """Updates the list of thinking times and calculates the average time"""
             nonlocal thinking_start_time
-            thinking_times = []  # Lista przechowująca czasy myślenia
-            total_thinking_time = 0  # Łączny czas myślenia
+            thinking_times = []
+            total_thinking_time = 0
 
             current_thinking_time = time.time() - thinking_start_time
             thinking_times.append(current_thinking_time)
             total_thinking_time += current_thinking_time
             self.average_thinking_time = total_thinking_time / len(thinking_times)
-            thinking_start_time = time.time()  # Reset startu czasu myślenia
+            thinking_start_time = time.time()  # Thinking time start reset
 
         def draw_elements():
             self.hearts_drawing()
@@ -1363,7 +1360,7 @@ class PiGame:
                 for i in range(10):
                     if getattr(self, f'square_{i}_rect').collidepoint(event_pos):
                         if self.draw_digits(str(i)):
-                            update_thinking_times()  # Zaktualizuj czas myślenia
+                            update_thinking_times()
 
         def handle_key_events(event_key):
             nonlocal thinking_start_time
@@ -1371,11 +1368,11 @@ class PiGame:
                 if pg.K_0 <= event_key <= pg.K_9:
                     digit = event_key - pg.K_0
                     if self.draw_digits(str(digit)):
-                        update_thinking_times()  # Zaktualizuj czas myślenia
+                        update_thinking_times()
                 elif 1073741913 <= event_key <= 1073741922:
                     digit = event_key - 1073741912 if event_key != 1073741922 else 0
                     if self.draw_digits(str(digit)):
-                        update_thinking_times()  # Zaktualizuj czas myślenia
+                        update_thinking_times()
 
         while challenge_running:
             self.challenge_screen_objects()
@@ -1387,7 +1384,7 @@ class PiGame:
                 if self.thinking_elapsed_time >= self.thinking_time_counter:
                     self.game_over = True
 
-            # Zapis total_time po osiągnięciu celu
+            # Total time saving after reaching the goal
             if self.digit_counter - 1 == self.goal_digit_counter:
                 if total_time is None:
                     total_time = time.time() - start_time
@@ -1447,11 +1444,11 @@ class PiGame:
 
         # Create labels
         for i, label in enumerate(highscores_labels):
-            # Tworzenie etykiety tekstowej
+            # Highscore labels
             label_text, label_rect = self.create_text_and_rect(
                 highscores_labels[i], 'cambria', 35, self.screen_width * 0.125 + x_offset, self.screen_height * 0.2
             )
-            # Dodanie tekstu i prostokąta do listy
+            # Adding text and rectangle to the list
             self.highscore_labels_texts_rects.append((label_text, label_rect))
             x_offset += self.screen_width * 0.15
 
@@ -1501,16 +1498,15 @@ class PiGame:
         """Save a new highscore to the file with two decimal places"""
         highscores_list = self.read_from_highscores()
 
-        # Dodaj nowy wynik i posortuj listę malejąco wg. wyniku
+        # Add a new result and sort the list descending by result.
         highscores_list.append((nick, digits, f"{avg_thinking_time:.2f}/{self.thinking_time_counter:.2f}", f"{total_time:.2f}", mistakes_ratio, int(score)))
         highscores_list = sorted(highscores_list, key=lambda x: float(x[5]), reverse=True)[
-                          :10]  # Sortowanie po ilosci cyfr
+                          :10]
 
-        # Zapisz zaktualizowaną listę wyników z powrotem do pliku
+        # Save updated list to the file
         with open('highscores.txt', 'w') as file:
             for nick, digits, avg_thinking_time, total_time, mistakes_ratio, score in highscores_list:
                 file.write(f"{nick},{digits},{avg_thinking_time},{total_time},{mistakes_ratio},{score}\n")
-
 
     def read_from_highscores(self):
         """Read highscores from the file and return them as a list of tuples (name, score)"""
@@ -1533,4 +1529,3 @@ if __name__ == '__main__':
     game = PiGame()
     game.main_screen()
 
-# Wyszarzone cyfry
