@@ -907,24 +907,38 @@ class PiGame:
             self.clock.tick(60)  # Screen refresh rate
 
     def guessing_rect_drawing(self):
+        # Displayed text `digits_str`
         digits_str = "".join(self.user_input[-self.max_display_digits:])
         guessed_digits_text = self.fonts['calibri'][72].render(f"{digits_str}", True, 'white')
-        base_text_str = self.read_pi_digits()[:self.start_digit_counter+1]
 
-        max_base_text_display = self.max_display_digits - len(digits_str)
-        base_text = self.fonts['calibri'][72].render(f"{base_text_str[-max_base_text_display:]}", True, 'green')
-        self.digit_number_text = self.fonts['calibri'][55].render(
-            f"Digit: {self.digit_counter + self.start_digit_counter - 1}", True, 'white')
+        # Full digit sequence for `base_text` (green)
+        base_text_str = self.read_pi_digits()[:self.start_digit_counter + 1]
 
+        # Set position for `guessed_digits_text`
         self.guessed_digits_text_rect = guessed_digits_text.get_rect(
             center=(self.guessing_rect.right - self.digits_display_offset, self.guessing_rect.centery + 8))
+
+        # Calculate the maximum number of digits that can fit in `base_text`
+        single_digit_width, _ = self.fonts['calibri'][72].size("0")
+        available_width_for_base_text = self.guessed_digits_text_rect.left - self.guessing_rect.left
+        max_base_digits_display = int(available_width_for_base_text / single_digit_width)
+
+        # Trim `base_text` to the maximum number of digits
+        displayed_base_text_str = base_text_str[-max_base_digits_display:]
+        base_text = self.fonts['calibri'][72].render(displayed_base_text_str, True, 'green')
+
+        # Set position for `base_text`
         self.base_text_rect = base_text.get_rect(
-            center=(self.guessed_digits_text_rect.left - 0.5 * base_text.width, self.guessing_rect.centery + 8))
+            center=(self.guessed_digits_text_rect.left - 0.5 * base_text.get_width(), self.guessing_rect.centery + 8))
+
+        # Text indicating the digit number
+        self.digit_number_text = self.fonts['calibri'][55].render(
+            f"Digit: {self.digit_counter + self.start_digit_counter - 1}", True, 'white')
         self.digit_number_rect = self.digit_number_text.get_rect(
             center=(self.guessing_rect.centerx, self.guessing_rect.bottom + 0.4 * self.guessing_rect.height))
 
-        if not self.base_text_rect.left < self.guessing_rect.left:
-            self.screen.blit(base_text, self.base_text_rect)
+        # Drawing
+        self.screen.blit(base_text, self.base_text_rect)
         self.screen.blit(guessed_digits_text, self.guessed_digits_text_rect)
         self.screen.blit(self.digit_number_text, self.digit_number_rect)
 
