@@ -1,9 +1,9 @@
 import math
-import os
 import sys
 import pygame as pg
 import pygame_gui
 import time
+from helpers import Helpers
 
 
 class PiGame:
@@ -17,6 +17,9 @@ class PiGame:
 
         # GUI manager added
         self.manager = pygame_gui.UIManager((self.screen_width, self.screen_height))
+
+        # Helpers class initialization
+        self.helpers = Helpers(self.screen, self.fonts, self.images)
 
     def setup_display(self):
         self.screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
@@ -97,58 +100,6 @@ class PiGame:
         self.images['heart'] = pg.transform.scale(self.images['heart'],
                                                   (self.screen_width * 0.038, self.screen_width * 0.034))
 
-    def create_text(self, text, font_name, size, color='white'):
-        return self.fonts[font_name][size].render(text, True, color)
-
-    def create_text_and_rect(self, text, font_name, size, x, y, color='white'):
-        """Creates text and a rectangle based on given parameters."""
-        rendered_text = self.create_text(text, font_name, size, color)
-        rect = rendered_text.get_rect(center=(x, y))
-        return rendered_text, rect
-
-    def create_button_and_rect(self, text, font_name, size, x, y, rect_width, rect_height, color='white'):
-        """Creates the button text and its rectangle based on specified parameters."""
-        button_text = self.fonts[font_name][size].render(text, True, color)
-        button_rect = pg.Rect(x, y, rect_width, rect_height)
-
-        # Creating text_rect with fonts corrections
-
-        if font_name == 'calibri':
-            y_correction = 5
-        elif font_name == 'candara':
-            y_correction = 8
-        else:
-            y_correction = 0
-
-        text_rect = button_text.get_rect(center=(button_rect.centerx, button_rect.centery + y_correction))
-        return button_text, button_rect, text_rect
-
-    def create_counter_and_rect(self, text, font_name, size, reference_rect, offset_x=0, offset_y=0):
-        """Creates the counter text and its rectangle based on the reference rectangle."""
-        counter_text = self.create_text(text, font_name, size)
-        counter_rect = counter_text.get_rect(
-            center=(reference_rect.centerx + offset_x, reference_rect.bottom + reference_rect.height * 0.72 + offset_y)
-        )
-        return counter_text, counter_rect
-
-    def create_image_rect(self, image_key, reference_rect, offset_x=0, offset_y=0):
-        """Creates an image rectangle based on the image key and the reference rectangle."""
-        return self.images[image_key].get_rect(
-            center=(reference_rect.centerx + offset_x, reference_rect.bottom + reference_rect.height * 0.6 + offset_y)
-        )
-
-    def draw_button(self, button_rect, button_text, button_text_rect, color='white'):
-        """Helper function to draw a button."""
-        pg.draw.rect(self.screen, color, button_rect, 3)
-        self.screen.blit(button_text, button_text_rect)
-
-    def read_pi_digits(self):
-        try:
-            with open('pi_digits.txt', 'r') as file:
-                return file.read().strip().replace('\n', '')
-        except FileNotFoundError:
-            return "Error: pi_digits.txt not found."
-
     def draw_learning_pi_digits(self):
         # Logic and starting parameters
         self.learning_screen_logic()
@@ -159,7 +110,7 @@ class PiGame:
             max_page_number = math.ceil(max_digits / self.digits_on_page_counter)
 
         # Load the pi digits except "3."
-        pi_digits = self.read_pi_digits()[2:]
+        pi_digits = self.helpers.read_pi_digits()[2:]
 
         # Setting the bottom digit range on the page
         self.digits_on_page_counter_bottom = 1 + (self.page_number_counter - 1) * self.digits_on_page_counter
@@ -178,9 +129,8 @@ class PiGame:
         x, y = self.x, self.y
         for i, chunk in enumerate([pi_digits[i:i + self.digits_in_columns_counter] for i in
                                    range(0, len(pi_digits), self.digits_in_columns_counter)]):
-            text = self.create_text(chunk, 'calibri', 40)
+            text = self.helpers.create_text(chunk, 'calibri', 40)
             rect = text.get_rect(center=(self.digits_rect.left + x, self.digits_rect.top + y))
-
 
             # Switching to the next row and rect positioning
             if rect.right > self.digits_rect.right:
@@ -225,7 +175,7 @@ class PiGame:
         self.square_7_y_pos = self.back_button_rect.y if self.keys_layout == 0 else self.switch_keys_layout_rect.y
 
         for i in range(10):
-            setattr(self, f'square_{i}_text', self.create_text(str(i), 'calibri', 72))
+            setattr(self, f'square_{i}_text', self.helpers.create_text(str(i), 'calibri', 72))
 
         square_size = self.screen_height * 0.12
         # Initial x and y based on guessing rect
@@ -261,26 +211,26 @@ class PiGame:
         self.images_initialization()
 
         # Buttons creating using the new create_button_and_rect
-        self.learning_button_text, self.learning_button_rect, self.learning_button_text_rect = self.create_button_and_rect(
+        self.learning_button_text, self.learning_button_rect, self.learning_button_text_rect = self.helpers.create_button_and_rect(
             "Learning", 'cambria', 35, self.screen_width * 0.42, self.screen_height * 0.37,
                                        self.screen_width * 0.16, self.screen_height * 0.08
         )
-        self.training_button_text, self.training_button_rect, self.training_button_text_rect = self.create_button_and_rect(
+        self.training_button_text, self.training_button_rect, self.training_button_text_rect = self.helpers.create_button_and_rect(
             "Training", 'cambria', 35, self.learning_button_rect.x,
             self.learning_button_rect.bottom + self.learning_button_rect.height * 0.2,
             self.screen_width * 0.16, self.screen_height * 0.08
         )
-        self.challenge_button_text, self.challenge_button_rect, self.challenge_button_text_rect = self.create_button_and_rect(
+        self.challenge_button_text, self.challenge_button_rect, self.challenge_button_text_rect = self.helpers.create_button_and_rect(
             "Challenge", 'cambria', 35, self.training_button_rect.x,
             self.training_button_rect.bottom + self.training_button_rect.height * 0.2,
             self.screen_width * 0.16, self.screen_height * 0.08
         )
-        self.highscores_button_text, self.highscores_button_rect, self.highscores_button_text_rect = self.create_button_and_rect(
+        self.highscores_button_text, self.highscores_button_rect, self.highscores_button_text_rect = self.helpers.create_button_and_rect(
             "High Scores", 'cambria', 35, self.challenge_button_rect.x,
             self.challenge_button_rect.bottom + self.challenge_button_rect.height * 0.2,
             self.screen_width * 0.16, self.screen_height * 0.08
         )
-        self.quit_button_text, self.quit_button_rect, self.quit_button_text_rect = self.create_button_and_rect(
+        self.quit_button_text, self.quit_button_rect, self.quit_button_text_rect = self.helpers.create_button_and_rect(
             "Quit", 'cambria', 35, self.challenge_button_rect.x,
             self.challenge_button_rect.bottom + self.challenge_button_rect.height * 1.95,
             self.screen_width * 0.16, self.screen_height * 0.08
@@ -299,27 +249,27 @@ class PiGame:
                                    self.screen_width * 0.6, self.screen_height * 0.8)
 
         # Texts
-        self.digits_in_columns_text, self.digits_in_columns_rect = self.create_text_and_rect(
+        self.digits_in_columns_text, self.digits_in_columns_rect = self.helpers.create_text_and_rect(
             "Digits in columns:", 'calibri', 40,
             self.digits_rect.right + (self.screen_width - self.digits_rect.right) * 0.5,
             self.digits_rect.top + 25
         )
-        self.page_number_text, self.page_number_rect = self.create_text_and_rect(
+        self.page_number_text, self.page_number_rect = self.helpers.create_text_and_rect(
             "Page number:", 'calibri', 40, self.digits_in_columns_rect.centerx,
             self.digits_in_columns_rect.bottom + self.digits_in_columns_rect.height * 3
         )
-        self.page_change_multiplier_text, self.page_change_multiplier_rect = self.create_text_and_rect(
+        self.page_change_multiplier_text, self.page_change_multiplier_rect = self.helpers.create_text_and_rect(
             "Page change multiplier:", 'calibri', 40, self.digits_in_columns_rect.centerx,
             self.page_number_rect.bottom + self.digits_in_columns_rect.height * 3
         )
-        self.digits_on_page_text, self.digits_on_page_rect = self.create_text_and_rect(
+        self.digits_on_page_text, self.digits_on_page_rect = self.helpers.create_text_and_rect(
             "Digits on page:", 'calibri', 40, self.digits_in_columns_rect.centerx,
             self.page_change_multiplier_rect.bottom + 0.5 * (
                         (self.digits_rect.bottom - self.screen_height * 0.08) - self.page_change_multiplier_rect.bottom)
         )
 
         # Buttons and counters
-        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
+        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.helpers.create_button_and_rect(
             "Back", 'cambria', 35,
             self.digits_rect.right + (self.screen_width - self.digits_rect.right) * 0.5 - self.screen_width * 0.08,
             self.digits_rect.bottom - self.screen_height * 0.08,
@@ -327,73 +277,73 @@ class PiGame:
         )
 
         # Counters
-        self.digits_in_columns_counter_text, self.digits_in_columns_counter_rect = self.create_counter_and_rect(
+        self.digits_in_columns_counter_text, self.digits_in_columns_counter_rect = self.helpers.create_counter_and_rect(
             str(self.digits_in_columns_counter), 'calibri', 40, self.digits_in_columns_rect
         )
-        self.page_number_counter_text, self.page_number_counter_rect = self.create_counter_and_rect(
+        self.page_number_counter_text, self.page_number_counter_rect = self.helpers.create_counter_and_rect(
             str(self.page_number_counter), 'calibri', 40, self.page_number_rect
         )
-        self.page_change_multiplier_counter_text, self.page_change_multiplier_counter_rect = self.create_counter_and_rect(
+        self.page_change_multiplier_counter_text, self.page_change_multiplier_counter_rect = self.helpers.create_counter_and_rect(
             "x" + str(self.page_change_multiplier_counter), 'calibri', 40, self.page_change_multiplier_rect
         )
-        self.digits_on_page_counter_text, self.digits_on_page_counter_rect = self.create_counter_and_rect(
+        self.digits_on_page_counter_text, self.digits_on_page_counter_rect = self.helpers.create_counter_and_rect(
             f"{self.digits_on_page_counter_bottom} - {self.digits_on_page_counter_top}", 'calibri', 40,
             self.digits_on_page_rect
         )
 
         # Images rectangles
-        self.digits_in_columns_minus = self.create_image_rect('minus', self.digits_in_columns_rect, -80)
-        self.digits_in_columns_plus = self.create_image_rect('plus', self.digits_in_columns_rect, 80)
-        self.page_number_minus = self.create_image_rect('minus', self.page_number_rect, -80)
-        self.page_number_plus = self.create_image_rect('plus', self.page_number_rect, 80)
-        self.page_change_multiplier_minus = self.create_image_rect('minus', self.page_change_multiplier_rect, -80)
-        self.page_change_multiplier_plus = self.create_image_rect('plus', self.page_change_multiplier_rect, 80)
+        self.digits_in_columns_minus = self.helpers.create_image_rect('minus', self.digits_in_columns_rect, -80)
+        self.digits_in_columns_plus = self.helpers.create_image_rect('plus', self.digits_in_columns_rect, 80)
+        self.page_number_minus = self.helpers.create_image_rect('minus', self.page_number_rect, -80)
+        self.page_number_plus = self.helpers.create_image_rect('plus', self.page_number_rect, 80)
+        self.page_change_multiplier_minus = self.helpers.create_image_rect('minus', self.page_change_multiplier_rect, -80)
+        self.page_change_multiplier_plus = self.helpers.create_image_rect('plus', self.page_change_multiplier_rect, 80)
 
     def training_screen_settings_objects(self):
         self.images_initialization()
 
         # Texts
-        self.training_mode_title_text, self.training_mode_title_rect = self.create_text_and_rect(
+        self.training_mode_title_text, self.training_mode_title_rect = self.helpers.create_text_and_rect(
             "Training mode", 'candara', 72, self.screen_width * 0.5, self.screen_height * 0.25
         )
-        self.choose_start_point_text, self.choose_start_point_rect = self.create_text_and_rect(
+        self.choose_start_point_text, self.choose_start_point_rect = self.helpers.create_text_and_rect(
             "Choose a start point", 'candara', 60, self.screen_width * 0.5,
                                                    self.training_mode_title_rect.bottom + self.training_mode_title_rect.height * 1.4
         )
-        self.start_digit_text, self.start_digit_rect = self.create_text_and_rect(
+        self.start_digit_text, self.start_digit_rect = self.helpers.create_text_and_rect(
             "Digit:", 'calibri', 40, self.training_mode_title_rect.left,
             self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 0.2
         )
-        self.digit_multiplier_text, self.digit_multiplier_rect = self.create_text_and_rect(
+        self.digit_multiplier_text, self.digit_multiplier_rect = self.helpers.create_text_and_rect(
             "Multiplier:", 'calibri', 40, self.training_mode_title_rect.right,
             self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 0.2
         )
 
         # Buttons
-        self.start_button_text, self.start_button_rect, self.start_button_text_rect = self.create_button_and_rect(
+        self.start_button_text, self.start_button_rect, self.start_button_text_rect = self.helpers.create_button_and_rect(
             "Start", 'candara', 60, self.training_mode_title_rect.centerx - self.screen_width * 0.08,
                                     self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 3,
                                     self.screen_width * 0.16, self.screen_height * 0.08
         )
-        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
+        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.helpers.create_button_and_rect(
             "Back", 'candara', 60, self.start_button_rect.x,
             self.start_button_rect.bottom + self.start_button_rect.height * 0.2,
             self.screen_width * 0.16, self.screen_height * 0.08
         )
 
         # Counters
-        self.start_digit_counter_text, self.start_digit_counter_rect = self.create_counter_and_rect(
+        self.start_digit_counter_text, self.start_digit_counter_rect = self.helpers.create_counter_and_rect(
             str(self.start_digit_counter), 'candara', 50, self.start_digit_rect
         )
-        self.digit_multiplier_counter_text, self.digit_multiplier_counter_rect = self.create_counter_and_rect(
+        self.digit_multiplier_counter_text, self.digit_multiplier_counter_rect = self.helpers.create_counter_and_rect(
             "x" + str(self.digit_multiplier_counter), 'candara', 50, self.digit_multiplier_rect
         )
 
         # Images
-        self.start_digit_plus = self.create_image_rect('plus', self.start_digit_rect, 95)
-        self.start_digit_minus = self.create_image_rect('minus', self.start_digit_rect, -95)
-        self.digit_multiplier_plus = self.create_image_rect('plus', self.digit_multiplier_rect, 95)
-        self.digit_multiplier_minus = self.create_image_rect('minus', self.digit_multiplier_rect, -95)
+        self.start_digit_plus = self.helpers.create_image_rect('plus', self.start_digit_rect, 95)
+        self.start_digit_minus = self.helpers.create_image_rect('minus', self.start_digit_rect, -95)
+        self.digit_multiplier_plus = self.helpers.create_image_rect('plus', self.digit_multiplier_rect, 95)
+        self.digit_multiplier_minus = self.helpers.create_image_rect('minus', self.digit_multiplier_rect, -95)
 
     def training_screen_objects(self):
         self.images_initialization()
@@ -402,7 +352,7 @@ class PiGame:
         self.guessing_rect = pg.Rect(self.screen_width * 0.06, self.screen_height * 0.1,  # Position
                                      self.screen_width * 0.88, self.screen_height * 0.12)  # Size
 
-        self.switch_keys_layout_text, self.switch_keys_layout_rect, self.switch_keys_layout_text_rect = self.create_button_and_rect(
+        self.switch_keys_layout_text, self.switch_keys_layout_rect, self.switch_keys_layout_text_rect = self.helpers.create_button_and_rect(
             "Switch the keys layout", 'calibri', 40,
             self.guessing_rect.left,
             self.guessing_rect.bottom + self.guessing_rect.height,
@@ -415,36 +365,36 @@ class PiGame:
 
         # Texts
         hint_color = (59, 59, 59) if self.switch_position == 0 else 'white'
-        self.hint_text, self.hint_text_rect = self.create_text_and_rect(
+        self.hint_text, self.hint_text_rect = self.helpers.create_text_and_rect(
             f"Hint after: {self.hint_counter} seconds", 'calibri', 40, self.hint_rect.centerx, self.hint_rect.centery,
             hint_color
         )
         # Reducing the text_rect size (for better centering)
         self.hint_text_rect.inflate_ip(-10, -10)
 
-        self.your_time_text, self.your_time_rect = self.create_text_and_rect(
+        self.your_time_text, self.your_time_rect = self.helpers.create_text_and_rect(
             "Your time:", 'candara', 72, self.back_button_rect.centerx, self.switch_keys_layout_rect.centery
         )
 
         # Back button
-        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
+        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.helpers.create_button_and_rect(
             'Back', 'candara', 60, self.guessing_rect.right - self.screen_width * 0.24,
                                    self.hint_rect.bottom + self.hint_rect.height * 0.35,
                                    self.screen_width * 0.24, self.screen_height * 0.12
         )
 
         # Images rectangles
-        self.hint_minus = self.create_image_rect('t_s_minus', self.hint_rect,
+        self.hint_minus = self.helpers.create_image_rect('t_s_minus', self.hint_rect,
                                                  int(-self.hint_rect.width * 0.5 + self.screen_width * 0.03),
                                                  int(-self.hint_rect.height * 0.1))
-        self.hint_plus = self.create_image_rect('t_s_plus', self.hint_rect, 0, int(-self.hint_rect.height * 0.1))
-        self.switch_on = self.create_image_rect('switch_on', self.hint_rect,
+        self.hint_plus = self.helpers.create_image_rect('t_s_plus', self.hint_rect, 0, int(-self.hint_rect.height * 0.1))
+        self.switch_on = self.helpers.create_image_rect('switch_on', self.hint_rect,
                                                 int(self.hint_rect.width * 0.5 - self.screen_width * 0.03),
                                                 int(-self.hint_rect.height * 0.1))
-        self.switch_off = self.create_image_rect('switch_off', self.hint_rect,
+        self.switch_off = self.helpers.create_image_rect('switch_off', self.hint_rect,
                                                  int(self.hint_rect.width * 0.5 - self.screen_width * 0.03),
                                                  int(-self.hint_rect.height * 0.1))
-        self.switch_neutral = self.create_image_rect('switch_neutral', self.hint_rect,
+        self.switch_neutral = self.helpers.create_image_rect('switch_neutral', self.hint_rect,
                                                      int(self.hint_rect.width * 0.5 - self.screen_width * 0.03),
                                                      int(-self.hint_rect.height * 0.1))
 
@@ -455,109 +405,109 @@ class PiGame:
         self.images_initialization()
 
         # Texts
-        self.challenge_mode_title_text, self.challenge_mode_title_rect = self.create_text_and_rect(
+        self.challenge_mode_title_text, self.challenge_mode_title_rect = self.helpers.create_text_and_rect(
             "Challenge mode", 'candara', 72, self.screen_width * 0.5, self.screen_height * 0.15
         )
 
-        self.choose_start_point_text, self.choose_start_point_rect = self.create_text_and_rect(
+        self.choose_start_point_text, self.choose_start_point_rect = self.helpers.create_text_and_rect(
             "Choose a start point", 'candara', 60, self.screen_width * 0.25,
                                                    self.challenge_mode_title_rect.bottom + self.challenge_mode_title_rect.height * 0.7
         )
 
-        self.set_ch_goal_text, self.set_ch_goal_rect = self.create_text_and_rect(
+        self.set_ch_goal_text, self.set_ch_goal_rect = self.helpers.create_text_and_rect(
             "Set challenge goal", 'candara', 60, self.screen_width * 0.75, self.choose_start_point_rect.centery
         )
 
-        self.set_thinking_time_text, self.set_thinking_time_rect = self.create_text_and_rect(
+        self.set_thinking_time_text, self.set_thinking_time_rect = self.helpers.create_text_and_rect(
             "Set thinking time [s]", 'candara', 60, self.choose_start_point_rect.centerx,
             self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 3.35
         )
 
-        self.mistakes_allowed_text, self.mistakes_allowed_rect = self.create_text_and_rect(
+        self.mistakes_allowed_text, self.mistakes_allowed_rect = self.helpers.create_text_and_rect(
             "Mistakes allowed", 'candara', 60, self.set_ch_goal_rect.centerx,
             self.set_thinking_time_rect.centery
         )
 
-        self.start_digit_text, self.start_digit_rect = self.create_text_and_rect(
+        self.start_digit_text, self.start_digit_rect = self.helpers.create_text_and_rect(
             "Digit:", 'calibri', 40, self.choose_start_point_rect.left + 40,
                                      self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 0.2
         )
 
-        self.digit_multiplier_text, self.digit_multiplier_rect = self.create_text_and_rect(
+        self.digit_multiplier_text, self.digit_multiplier_rect = self.helpers.create_text_and_rect(
             "Multiplier:", 'calibri', 40, self.choose_start_point_rect.right - 40,
                                           self.choose_start_point_rect.bottom + self.choose_start_point_rect.height * 0.2
         )
 
-        self.goal_digit_text, self.goal_digit_rect = self.create_text_and_rect(
+        self.goal_digit_text, self.goal_digit_rect = self.helpers.create_text_and_rect(
             "Digit:", 'calibri', 40,
             self.set_ch_goal_rect.left + 15,
             self.set_ch_goal_rect.bottom + self.set_ch_goal_rect.height * 0.2
         )
 
-        self.goal_digit_multiplier_text, self.goal_digit_multiplier_rect = self.create_text_and_rect(
+        self.goal_digit_multiplier_text, self.goal_digit_multiplier_rect = self.helpers.create_text_and_rect(
             "Multiplier:", 'calibri', 40,
             self.set_ch_goal_rect.right - 15,
             self.set_ch_goal_rect.bottom + self.set_ch_goal_rect.height * 0.2
         )
 
         # Start and back buttons
-        self.start_button_text, self.start_button_rect, self.start_button_text_rect = self.create_button_and_rect(
+        self.start_button_text, self.start_button_rect, self.start_button_text_rect = self.helpers.create_button_and_rect(
             'Start', 'candara', 60, self.challenge_mode_title_rect.centerx - self.screen_width * 0.08,
                                     self.set_thinking_time_rect.bottom + 0.4 * (
                                             self.screen_height - self.set_thinking_time_rect.bottom),
                                     self.screen_width * 0.16, self.screen_height * 0.08
         )
 
-        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
+        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.helpers.create_button_and_rect(
             'Back', 'candara', 60, self.start_button_rect.left,
             self.start_button_rect.bottom + self.start_button_rect.height * 0.2, self.screen_width * 0.16,
             self.screen_height * 0.08
         )
 
         # Counters
-        self.start_digit_counter_text, self.start_digit_counter_rect = self.create_counter_and_rect(
+        self.start_digit_counter_text, self.start_digit_counter_rect = self.helpers.create_counter_and_rect(
             str(self.start_digit_counter), 'candara', 50, self.start_digit_rect
         )
 
-        self.digit_multiplier_counter_text, self.digit_multiplier_counter_rect = self.create_counter_and_rect(
+        self.digit_multiplier_counter_text, self.digit_multiplier_counter_rect = self.helpers.create_counter_and_rect(
             "x" + str(self.digit_multiplier_counter), 'candara', 50, self.digit_multiplier_rect
         )
 
-        self.goal_digit_counter_text, self.goal_digit_counter_rect = self.create_counter_and_rect(
+        self.goal_digit_counter_text, self.goal_digit_counter_rect = self.helpers.create_counter_and_rect(
             str(self.goal_digit_counter), 'candara', 50, self.goal_digit_rect,
         )
 
-        self.goal_digit_multiplier_counter_text, self.goal_digit_multiplier_counter_rect = self.create_counter_and_rect(
+        self.goal_digit_multiplier_counter_text, self.goal_digit_multiplier_counter_rect = self.helpers.create_counter_and_rect(
             "x" + str(self.goal_digit_multiplier_counter), 'candara', 50, self.goal_digit_multiplier_rect,
         )
 
-        self.thinking_time_counter_text, self.thinking_time_counter_rect = self.create_counter_and_rect(
+        self.thinking_time_counter_text, self.thinking_time_counter_rect = self.helpers.create_counter_and_rect(
             str(self.thinking_time_counter), 'candara', 50, self.set_thinking_time_rect
         )
 
-        self.mistakes_allowed_counter_text, self.mistakes_allowed_counter_rect = self.create_counter_and_rect(
+        self.mistakes_allowed_counter_text, self.mistakes_allowed_counter_rect = self.helpers.create_counter_and_rect(
             str(self.mistakes_allowed_counter), 'candara', 50, self.mistakes_allowed_rect
         )
 
         # Images rectangles
-        self.start_digit_plus = self.create_image_rect('plus', self.start_digit_rect, offset_x=95)
-        self.start_digit_minus = self.create_image_rect('minus', self.start_digit_rect, offset_x=-95)
+        self.start_digit_plus = self.helpers.create_image_rect('plus', self.start_digit_rect, offset_x=95)
+        self.start_digit_minus = self.helpers.create_image_rect('minus', self.start_digit_rect, offset_x=-95)
 
-        self.digit_multiplier_plus = self.create_image_rect('plus', self.digit_multiplier_rect, offset_x=95)
-        self.digit_multiplier_minus = self.create_image_rect('minus', self.digit_multiplier_rect, offset_x=-95)
+        self.digit_multiplier_plus = self.helpers.create_image_rect('plus', self.digit_multiplier_rect, offset_x=95)
+        self.digit_multiplier_minus = self.helpers.create_image_rect('minus', self.digit_multiplier_rect, offset_x=-95)
 
-        self.goal_digit_plus = self.create_image_rect('plus', self.goal_digit_rect, offset_x=95)
-        self.goal_digit_minus = self.create_image_rect('minus', self.goal_digit_rect, offset_x=-95)
+        self.goal_digit_plus = self.helpers.create_image_rect('plus', self.goal_digit_rect, offset_x=95)
+        self.goal_digit_minus = self.helpers.create_image_rect('minus', self.goal_digit_rect, offset_x=-95)
 
-        self.goal_digit_multiplier_plus = self.create_image_rect('plus', self.goal_digit_multiplier_rect, offset_x=95)
-        self.goal_digit_multiplier_minus = self.create_image_rect('minus', self.goal_digit_multiplier_rect,
+        self.goal_digit_multiplier_plus = self.helpers.create_image_rect('plus', self.goal_digit_multiplier_rect, offset_x=95)
+        self.goal_digit_multiplier_minus = self.helpers.create_image_rect('minus', self.goal_digit_multiplier_rect,
                                                                   offset_x=-95)
 
-        self.thinking_time_plus = self.create_image_rect('plus', self.set_thinking_time_rect, offset_x=95)
-        self.thinking_time_minus = self.create_image_rect('minus', self.set_thinking_time_rect, offset_x=-95)
+        self.thinking_time_plus = self.helpers.create_image_rect('plus', self.set_thinking_time_rect, offset_x=95)
+        self.thinking_time_minus = self.helpers.create_image_rect('minus', self.set_thinking_time_rect, offset_x=-95)
 
-        self.mistakes_allowed_plus = self.create_image_rect('plus', self.mistakes_allowed_rect, offset_x=95)
-        self.mistakes_allowed_minus = self.create_image_rect('minus', self.mistakes_allowed_rect, offset_x=-95)
+        self.mistakes_allowed_plus = self.helpers.create_image_rect('plus', self.mistakes_allowed_rect, offset_x=95)
+        self.mistakes_allowed_minus = self.helpers.create_image_rect('minus', self.mistakes_allowed_rect, offset_x=-95)
 
     def challenge_screen_objects(self):
         self.images_initialization()
@@ -566,48 +516,43 @@ class PiGame:
                                      self.screen_width * 0.88, self.screen_height * 0.12)  # Size
 
         # Texts
-        self.goal_text, self.goal_rect = self.create_text_and_rect(
+        self.goal_text, self.goal_rect = self.helpers.create_text_and_rect(
             f"Goal: {self.goal_digit_counter - len(self.user_input)}", 'candara', 60,
             self.guessing_rect.left + self.screen_width * 0.12,
             self.guessing_rect.bottom + 2.8 * self.guessing_rect.height * 1.05
         )
 
-        self.your_time_text, self.your_time_rect = self.create_text_and_rect(
+        self.your_time_text, self.your_time_rect = self.helpers.create_text_and_rect(
             "Your time:", 'candara', 72, self.back_button_rect.centerx,
             self.guessing_rect.bottom + self.guessing_rect.height * 1.4
         )
 
-        self.thinking_time_text, self.thinking_time_rect = self.create_text_and_rect(
+        self.thinking_time_text, self.thinking_time_rect = self.helpers.create_text_and_rect(
             "Thinking time:", 'candara', 60, self.goal_rect.centerx,
             self.goal_rect.bottom + 2 * self.goal_rect.height * 0.6
         )
 
         #   Game_over texts
-        self.game_text, self.game_rect = self.create_text_and_rect(
+        self.game_text, self.game_rect = self.helpers.create_text_and_rect(
             "Game", 'candara', 96, self.screen_width * 0.5, self.screen_height * 0.45
         )
 
-        self.over_text, self.over_rect = self.create_text_and_rect(
+        self.over_text, self.over_rect = self.helpers.create_text_and_rect(
             "Over", 'candara', 96, self.game_rect.centerx, self.game_rect.bottom + self.game_rect.height
         )
 
         #   Winning texts
-        self.win_main_text, self.win_main_rect = self.create_text_and_rect(
+        self.win_main_text, self.win_main_rect = self.helpers.create_text_and_rect(
             "Good job!", 'candara', 96, self.screen_width * 0.5, self.screen_height * 0.5
         )
 
-        self.win_second_text, self.win_second_rect = self.create_text_and_rect(
+        self.win_second_text, self.win_second_rect = self.helpers.create_text_and_rect(
             "Goal reached!", 'calibri', 55,
             self.win_main_rect.centerx, self.win_main_rect.bottom + self.win_main_rect.height * 0.5, 'yellow'
         )
 
-        # self.new_highscore_text, self.new_highscore_rect = self.create_text_and_rect(
-        #     "[New Highscore]", 'calibri', 40,
-        #     self.win_second_rect.centerx, self.win_second_rect.bottom + self.win_second_rect.height * 0.5, 'orange'
-        # )
-
         # Buttons and counters
-        self.switch_keys_layout_text, self.switch_keys_layout_rect, self.switch_keys_layout_text_rect = self.create_button_and_rect(
+        self.switch_keys_layout_text, self.switch_keys_layout_rect, self.switch_keys_layout_text_rect = self.helpers.create_button_and_rect(
             "Switch the keys layout", 'calibri', 40,
             self.guessing_rect.left,
             self.guessing_rect.bottom + self.guessing_rect.height,
@@ -615,7 +560,7 @@ class PiGame:
         )
 
         # Back button
-        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
+        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.helpers.create_button_and_rect(
             "Back", 'candara', 60, self.guessing_rect.right - self.screen_width * 0.24,
                                    self.switch_keys_layout_rect.bottom + self.switch_keys_layout_rect.height * 1.7,
                                    self.screen_width * 0.24, self.screen_height * 0.12
@@ -623,7 +568,6 @@ class PiGame:
 
         # Keyboard initialization method
         self.keys_initialization()
-
 
     def nickname_screen(self):
         input_active = False  # Inactive insert box in the beginning
@@ -640,7 +584,7 @@ class PiGame:
         nick_inserted = False
 
         # Submit button
-        submit_text, submit_rect, submit_text_rect = self.create_button_and_rect("Submit", 'cambria', 35,
+        submit_text, submit_rect, submit_text_rect = self.helpers.create_button_and_rect("Submit", 'cambria', 35,
                                                                                  nick_rect.x - self.screen_width * 0.06,
                                                                                  nick_rect.bottom + nick_rect.height * 0.6,
                                                                                  self.screen_width * 0.12,
@@ -675,12 +619,12 @@ class PiGame:
             self.screen.fill('black')
 
             # "Enter your nickname" text
-            prompt_text, prompt_rect = self.create_text_and_rect("Enter your nickname:", 'candara', 60,
+            prompt_text, prompt_rect = self.helpers.create_text_and_rect("Enter your nickname:", 'candara', 60,
                                                                  self.screen_width * 0.5, self.screen_height * 0.35)
             self.screen.blit(prompt_text, prompt_rect)
 
             # Inserted text rendering
-            nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35,
+            nick_text, nick_rect, nick_text_rect = self.helpers.create_button_and_rect(str(text), 'cambria', 35,
                                                                                self.screen_width * 0.42 - x_offset,
                                                                                self.screen_height * 0.45,
                                                                                self.screen_width * 0.16 + x_offset * 2,
@@ -689,7 +633,7 @@ class PiGame:
                 x_offset += 17.5
             elif nick_rect.width > self.screen_width * 0.16 and nick_rect.right - nick_text_rect.right > 25:
                 x_offset -= 17.5
-                nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35,
+                nick_text, nick_rect, nick_text_rect = self.helpers.create_button_and_rect(str(text), 'cambria', 35,
                                                                                    self.screen_width * 0.42 - x_offset,
                                                                                    self.screen_height * 0.45,
                                                                                    self.screen_width * 0.16 + x_offset * 2,
@@ -697,8 +641,8 @@ class PiGame:
                                                                                    color=color)
 
             # Buttons drawing
-            self.draw_button(nick_rect, nick_text, nick_text_rect, color=color)
-            self.draw_button(submit_rect, submit_text, submit_text_rect, 'green')
+            self.helpers.draw_button(nick_rect, nick_text, nick_text_rect, color=color)
+            self.helpers.draw_button(submit_rect, submit_text, submit_text_rect, 'green')
 
             pg.display.flip()
             self.clock.tick(30)
@@ -716,11 +660,11 @@ class PiGame:
             self.screen.blit(self.images['logo'], self.game_logo)
 
             # Drawing buttons
-            self.draw_button(self.learning_button_rect, self.learning_button_text, self.learning_button_text_rect)
-            self.draw_button(self.training_button_rect, self.training_button_text, self.training_button_text_rect)
-            self.draw_button(self.challenge_button_rect, self.challenge_button_text, self.challenge_button_text_rect)
-            self.draw_button(self.highscores_button_rect, self.highscores_button_text, self.highscores_button_text_rect)
-            self.draw_button(self.quit_button_rect, self.quit_button_text, self.quit_button_text_rect)
+            self.helpers.draw_button(self.learning_button_rect, self.learning_button_text, self.learning_button_text_rect)
+            self.helpers.draw_button(self.training_button_rect, self.training_button_text, self.training_button_text_rect)
+            self.helpers.draw_button(self.challenge_button_rect, self.challenge_button_text, self.challenge_button_text_rect)
+            self.helpers.draw_button(self.highscores_button_rect, self.highscores_button_text, self.highscores_button_text_rect)
+            self.helpers.draw_button(self.quit_button_rect, self.quit_button_text, self.quit_button_text_rect)
 
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -818,7 +762,7 @@ class PiGame:
 
             # Draw buttons
             pg.draw.rect(self.screen, 'white', self.digits_rect, 3)
-            self.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
+            self.helpers.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
 
             # Draw digits
             self.draw_learning_pi_digits()
@@ -894,7 +838,7 @@ class PiGame:
                 self.start_digit_counter += self.digit_multiplier_counter
 
             self.training_screen_settings_objects()
-            self.start_digit_counter_text = self.create_text(str(self.start_digit_counter), 'candara', 50)
+            self.start_digit_counter_text = self.helpers.create_text(str(self.start_digit_counter), 'candara', 50)
 
             # Handle digit_multiplier - and + buttons
             current_index = self.digit_multipliers.index(self.digit_multiplier_counter)
@@ -904,7 +848,7 @@ class PiGame:
                 self.digit_multiplier_counter = self.digit_multipliers[current_index + 1]
 
             self.training_screen_settings_objects()
-            self.digit_multiplier_counter_text = self.create_text("x" + str(self.digit_multiplier_counter), 'candara',
+            self.digit_multiplier_counter_text = self.helpers.create_text("x" + str(self.digit_multiplier_counter), 'candara',
                                                                   50)
 
             return True  # Continue running
@@ -919,8 +863,8 @@ class PiGame:
             draw_images()
 
             # Draw buttons
-            self.draw_button(self.start_button_rect, self.start_button_text, self.start_button_text_rect)
-            self.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
+            self.helpers.draw_button(self.start_button_rect, self.start_button_text, self.start_button_text_rect)
+            self.helpers.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
 
             # Events loop
             for event in pg.event.get():
@@ -955,7 +899,7 @@ class PiGame:
         guessed_digits_text = self.fonts['calibri'][72].render(f"{digits_str}", True, 'white')
 
         # Full digit sequence for `base_text` (green)
-        base_text_str = self.read_pi_digits()[:self.start_digit_counter + 1]
+        base_text_str = self.helpers.read_pi_digits()[:self.start_digit_counter + 1]
 
         # Set position for `guessed_digits_text`
         self.guessed_digits_text_rect = guessed_digits_text.get_rect(
@@ -1116,7 +1060,7 @@ class PiGame:
 
             # Check if it's time for a hint
             if self.time_to_hint > self.hint_counter and self.switch_position == 1:
-                pi_digits = self.read_pi_digits()[self.start_digit_counter + 1:]
+                pi_digits = self.helpers.read_pi_digits()[self.start_digit_counter + 1:]
                 self.next_correct_digit = int(pi_digits[len(self.user_input)])
                 reset_time = time.time()
 
@@ -1134,7 +1078,7 @@ class PiGame:
 
     def draw_digits(self, user_input):
         self.incorrect_square_number = None
-        pi_digits = self.read_pi_digits()[self.start_digit_counter + 1:].replace(".", "")
+        pi_digits = self.helpers.read_pi_digits()[self.start_digit_counter + 1:].replace(".", "")
 
         # Building a list of digits to check
         tested_digits = self.user_input + [user_input]
@@ -1209,14 +1153,14 @@ class PiGame:
                 self.screen.blit(self.images['plus'], plus)
 
         def update_counter_texts():
-            self.start_digit_counter_text = self.create_text(str(self.start_digit_counter), 'candara', 50)
-            self.digit_multiplier_counter_text = self.create_text("x" + str(self.digit_multiplier_counter), 'candara',
+            self.start_digit_counter_text = self.helpers.create_text(str(self.start_digit_counter), 'candara', 50)
+            self.digit_multiplier_counter_text = self.helpers.create_text("x" + str(self.digit_multiplier_counter), 'candara',
                                                                   50)
-            self.goal_digit_counter_text = self.create_text(str(self.goal_digit_counter), 'candara', 50)
-            self.goal_digit_multiplier_counter_text = self.create_text("x" + str(self.goal_digit_multiplier_counter),
+            self.goal_digit_counter_text = self.helpers.create_text(str(self.goal_digit_counter), 'candara', 50)
+            self.goal_digit_multiplier_counter_text = self.helpers.create_text("x" + str(self.goal_digit_multiplier_counter),
                                                                        'candara', 50)
-            self.thinking_time_counter_text = self.create_text(str(self.thinking_time_counter), 'candara', 50)
-            self.mistakes_allowed_counter_text = self.create_text(str(self.mistakes_allowed_counter), 'candara', 50)
+            self.thinking_time_counter_text = self.helpers.create_text(str(self.thinking_time_counter), 'candara', 50)
+            self.mistakes_allowed_counter_text = self.helpers.create_text(str(self.mistakes_allowed_counter), 'candara', 50)
             self.challenge_screen_settings_objects()
 
         def handle_button_clicks():
@@ -1292,8 +1236,8 @@ class PiGame:
             draw_images()
 
             # Draw buttons
-            self.draw_button(self.start_button_rect, self.start_button_text, self.start_button_text_rect)
-            self.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
+            self.helpers.draw_button(self.start_button_rect, self.start_button_text, self.start_button_text_rect)
+            self.helpers.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
 
             # Events loop
             for event in pg.event.get():
@@ -1416,7 +1360,7 @@ class PiGame:
                     score = self.calculate_score(digits, self.average_thinking_time, self.thinking_time_counter,
                                                  total_time, mistakes_allowed - self.mistakes_allowed_counter,
                                                  mistakes_allowed)
-                    self.save_to_highscores(nick, digits, self.average_thinking_time, total_time, mistakes_ratio, score)
+                    self.helpers.save_to_highscores(nick, digits, self.average_thinking_time, total_time, mistakes_ratio, score, self.thinking_time_counter)
                 challenge_running = False
                 self.main_values()
                 self.challenge_screen_settings()
@@ -1468,7 +1412,7 @@ class PiGame:
             if self.game_over:
                 self.screen.blit(self.game_text, self.game_rect)
                 self.screen.blit(self.over_text, self.over_rect)
-                pi_digits = self.read_pi_digits()[self.start_digit_counter - 1:]
+                pi_digits = self.helpers.read_pi_digits()[self.start_digit_counter - 1:]
                 correct_digits_text = self.fonts['calibri'][60].render(
                     f"Should be: {pi_digits[len(self.user_input):len(self.user_input) + 5]}...", True, 'yellow')
                 correct_digits_rect = correct_digits_text.get_rect(
@@ -1499,9 +1443,9 @@ class PiGame:
 
     def highscores_screen_objects(self):
         """Initialize objects for the highscores screen"""
-        self.highscores_title_text, self.highscores_title_rect = self.create_text_and_rect(
+        self.highscores_title_text, self.highscores_title_rect = self.helpers.create_text_and_rect(
             "High Scores", 'cambria', 75, self.screen_width * 0.5, self.screen_height * 0.1)
-        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
+        self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.helpers.create_button_and_rect(
             "Back", 'candara', 60, self.highscores_title_rect.centerx - self.screen_width * 0.1,
                                    self.screen_height * 0.80,
                                    self.screen_width * 0.20, self.screen_height * 0.1
@@ -1514,7 +1458,7 @@ class PiGame:
         # Create labels
         for i, label in enumerate(highscores_labels):
             # Highscore labels
-            label_text, label_rect = self.create_text_and_rect(
+            label_text, label_rect = self.helpers.create_text_and_rect(
                 highscores_labels[i], 'cambria', 35, self.screen_width * 0.125 + x_offset, self.screen_height * 0.2
             )
             # Adding text and rectangle to the list
@@ -1526,7 +1470,7 @@ class PiGame:
         highscores_running = True
         self.highscores_screen_objects()
 
-        highscores_list = self.read_from_highscores()
+        highscores_list = self.helpers.read_from_highscores()
 
         while highscores_running:
             self.screen.fill('black')
@@ -1544,14 +1488,14 @@ class PiGame:
                     x_offset = self.screen_width * 0.125  # Reset X position for each row
                     for value in entry:
                         # Display value under corresponding label
-                        value_text = self.create_text(str(value), 'cambria', 25)
+                        value_text = self.helpers.create_text(str(value), 'cambria', 25)
                         value_rect = value_text.get_rect(center=(x_offset, y_offset))
                         self.screen.blit(value_text, value_rect)
                         x_offset += self.screen_width * 0.15  # Move to the next column
                     y_offset += 40  # Move down for the next row of values
 
             # Display back button
-            self.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
+            self.helpers.draw_button(self.back_button_rect, self.back_button_text, self.back_button_text_rect)
 
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -1562,37 +1506,6 @@ class PiGame:
 
             pg.display.flip()
             self.clock.tick(60)
-
-    def save_to_highscores(self, nick, digits, avg_thinking_time, total_time, mistakes_ratio, score):
-        """Save a new highscore to the file with two decimal places"""
-        highscores_list = self.read_from_highscores()
-
-        # Add a new result and sort the list descending by result.
-        highscores_list.append((nick, digits, f"{avg_thinking_time:.2f}/{self.thinking_time_counter:.2f}",
-                                f"{total_time:.2f}", mistakes_ratio, int(score)))
-        highscores_list = sorted(highscores_list, key=lambda x: float(x[5]), reverse=True)[
-                          :10]
-
-        # Save updated list to the file
-        with open('highscores.txt', 'w') as file:
-            for nick, digits, avg_thinking_time, total_time, mistakes_ratio, score in highscores_list:
-                file.write(f"{nick},{digits},{avg_thinking_time},{total_time},{mistakes_ratio},{score}\n")
-
-    def read_from_highscores(self):
-        """Read highscores from the file and return them as a list of tuples (name, score)"""
-        if not os.path.exists('highscores.txt'):
-            return []  # Return an empty list if the file doesn't exist
-
-        highscores_list = []
-        try:
-            with open('highscores.txt', 'r') as file:
-                for line in file:
-                    nick, digits, avg_thinking_time, total_time, mistakes_ratio, score = line.strip().split(',')
-                    highscores_list.append((nick, digits, avg_thinking_time, total_time, mistakes_ratio, score))
-        except FileNotFoundError:
-            pass
-
-        return highscores_list
 
 
 if __name__ == '__main__':
