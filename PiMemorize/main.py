@@ -150,7 +150,7 @@ class PiGame:
             return "Error: pi_digits.txt not found."
 
     def draw_learning_pi_digits(self):
-        # Wczytanie logiki do ekranu nauki
+        # Logic and starting parameters
         self.learning_screen_logic()
         max_digits = 1000000
         if self.digits_on_page_counter == 0:
@@ -158,23 +158,23 @@ class PiGame:
         else:
             max_page_number = math.ceil(max_digits / self.digits_on_page_counter)
 
-        # Pobranie cyfr z liczby Pi z pominięciem "3."
+        # Load the pi digits except "3."
         pi_digits = self.read_pi_digits()[2:]
 
-        # Ustawienie dolnego zakresu cyfr na stronie
+        # Setting the bottom digit range on the page
         self.digits_on_page_counter_bottom = 1 + (self.page_number_counter - 1) * self.digits_on_page_counter
 
-        # Ograniczenie cyfr do milionowego miejsca
+        # Limitation of numbers to the millionth place
         if self.page_number_counter >= max_page_number:
             self.digits_on_page_counter_bottom = max_digits - self.digits_on_page_counter
-            self.digits_on_page_counter_top = max_digits  # Blokowanie górnej granicy na milion
+            self.digits_on_page_counter_top = max_digits  # Locking the top limit to 1 million
             self.page_number_counter = max_page_number
 
-        # Odcinanie `pi_digits` w oparciu o licznik stron
+        # Decimation of `pi_digits` based on page count
         if self.page_number_counter > 1:
             pi_digits = pi_digits[(self.page_number_counter - 1) * self.digits_on_page_counter:]
 
-        # Resetowanie pozycji rysowania
+        # Drawing positions resetting
         x, y = self.x, self.y
         for i, chunk in enumerate([pi_digits[i:i + self.digits_in_columns_counter] for i in
                                    range(0, len(pi_digits), self.digits_in_columns_counter)]):
@@ -182,24 +182,24 @@ class PiGame:
             rect = text.get_rect(center=(self.digits_rect.left + x, self.digits_rect.top + y))
 
 
-            # Przejście do następnej kolumny
+            # Switching to the next row and rect positioning
             if rect.right > self.digits_rect.right:
                 x, y = self.x, y + self.y
                 rect.center = (self.digits_rect.left + x, self.digits_rect.top + y)
 
-            # Sprawdzanie, czy przekroczono maksymalną wysokość ramki cyfr
+            # Checking whether the maximum height of the digit frame has been exceeded
             if rect.bottom > self.digits_rect.bottom:
-                # Określenie liczby cyfr na stronie
+                # Number of digits on the page reading
                 self.digits_on_page_counter = i * self.digits_in_columns_counter
                 self.digits_on_page_counter_top = min(self.page_number_counter * self.digits_on_page_counter, max_digits)
                 self.learning_screen_logic()
                 break
 
-            # Przejście do następnej kolumny
+            # Switching to the next column
             x += self.x + rect.width
             self.screen.blit(text, rect)
 
-        # Wyświetlanie zakresu cyfr
+        # Displaying the digit range on the page
         self.screen.blit(self.digits_on_page_counter_text, self.digits_on_page_counter_rect)
 
     def learning_screen_logic(self):
@@ -931,7 +931,11 @@ class PiGame:
                 elif event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
                     for name, entry in self.text_entries.items():
                         if event.ui_element == entry:
-                            setattr(self, name, int(event.text))
+                            # Validate the input: only allow positive integers
+                            if event.text.isdigit() and int(event.text) > 0:
+                                setattr(self, name, int(event.text))
+                            else:
+                                setattr(self, name, 1)  # Set default value if invalid
                             entry.hide()
                             self.training_screen_settings_objects()
                             break
@@ -1300,7 +1304,11 @@ class PiGame:
                 elif event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
                     for name, entry in self.text_entries.items():
                         if event.ui_element == entry:
-                            setattr(self, name, int(event.text))
+                            # Validate the input: only allow positive integers
+                            if event.text.isdigit() and int(event.text) > 0:
+                                setattr(self, name, int(event.text))
+                            else:
+                                setattr(self, name, 1)  # Set default value if invalid
                             entry.hide()
                             update_counter_texts()
                             break
