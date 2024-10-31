@@ -1451,7 +1451,7 @@ class PiGame:
                                    self.screen_width * 0.20, self.screen_height * 0.1
         )
 
-        highscores_labels = ["Nick", "Digits", "Avg Thinking Time", "Total Time", "Mistakes Ratio", "Score"]
+        highscores_labels = ["Nick", "Digits", "Thinking Time", "Total Time", "Mistakes Ratio", "Score"]
         self.highscore_labels_texts_rects = []
         x_offset = 0
 
