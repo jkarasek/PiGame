@@ -1,4 +1,6 @@
+import math
 import os
+import sys
 import pygame as pg
 import pygame_gui
 import time
@@ -148,31 +150,75 @@ class PiGame:
             return "Error: pi_digits.txt not found."
 
     def draw_learning_pi_digits(self):
+        # Wczytanie logiki do ekranu nauki
+        self.learning_screen_logic()
+        max_digits = 1000000
+        if self.digits_on_page_counter == 0:
+            max_page_number = 1000
+        else:
+            max_page_number = math.ceil(max_digits / self.digits_on_page_counter)
+
+        # Pobranie cyfr z liczby Pi z pominięciem "3."
         pi_digits = self.read_pi_digits()[2:]
+
+        # Ustawienie dolnego zakresu cyfr na stronie
         self.digits_on_page_counter_bottom = 1 + (self.page_number_counter - 1) * self.digits_on_page_counter
 
+        # Ograniczenie cyfr do milionowego miejsca
+        if self.page_number_counter >= max_page_number:
+            self.digits_on_page_counter_bottom = max_digits - self.digits_on_page_counter
+            self.digits_on_page_counter_top = max_digits  # Blokowanie górnej granicy na milion
+            self.page_number_counter = max_page_number
+
+        # Odcinanie `pi_digits` w oparciu o licznik stron
         if self.page_number_counter > 1:
             pi_digits = pi_digits[(self.page_number_counter - 1) * self.digits_on_page_counter:]
 
-        x, y = self.x, 35
+        # Resetowanie pozycji rysowania
+        x, y = self.x, self.y
         for i, chunk in enumerate([pi_digits[i:i + self.digits_in_columns_counter] for i in
                                    range(0, len(pi_digits), self.digits_in_columns_counter)]):
             text = self.create_text(chunk, 'calibri', 40)
-            rect = text.get_rect(center=(self.digits_rect.left + x, self.screen_height * 0.1 + y))
+            rect = text.get_rect(center=(self.digits_rect.left + x, self.digits_rect.top + y))
 
-            if rect.right + 15 > self.digits_rect.right:
-                x, y = self.x, y + 50
-                rect.center = (self.digits_rect.left + x, self.screen_height * 0.1 + y)
 
+            # Przejście do następnej kolumny
+            if rect.right > self.digits_rect.right:
+                x, y = self.x, y + self.y
+                rect.center = (self.digits_rect.left + x, self.digits_rect.top + y)
+
+            # Sprawdzanie, czy przekroczono maksymalną wysokość ramki cyfr
             if rect.bottom > self.digits_rect.bottom:
+                # Określenie liczby cyfr na stronie
                 self.digits_on_page_counter = i * self.digits_in_columns_counter
-                self.digits_on_page_counter_top = min(self.page_number_counter * self.digits_on_page_counter, 1000000)
-                self.learning_screen_objects()
-                self.screen.blit(self.digits_on_page_counter_text, self.digits_on_page_counter_rect)
+                self.digits_on_page_counter_top = min(self.page_number_counter * self.digits_on_page_counter, max_digits)
+                self.learning_screen_logic()
                 break
 
-            x += ((self.digits_rect.width - 2 * self.x) - (rect.width * self.columns)) / self.columns + rect.width
+            # Przejście do następnej kolumny
+            x += self.x + rect.width
             self.screen.blit(text, rect)
+
+        # Wyświetlanie zakresu cyfr
+        self.screen.blit(self.digits_on_page_counter_text, self.digits_on_page_counter_rect)
+
+    def learning_screen_logic(self):
+        self.learning_screen_objects()
+
+        # Columns spacing logic
+        columns_space_available = 0.5 * (self.digits_rect.right - self.digits_rect.left)
+        single_digit_width, single_digit_height = self.fonts['calibri'][40].size("0")
+        self.columns = int(columns_space_available/(self.digits_in_columns_counter*single_digit_width))
+        self.x = ((self.digits_rect.right - self.digits_rect.left) - (
+                    self.columns * (self.digits_in_columns_counter * single_digit_width))) / (
+                             self.columns + 2)  # Space between columns width
+
+        # Rows spacing logic
+        rows_space_available = 0.5 * (self.digits_rect.bottom - self.digits_rect.top)
+        self.rows = int(rows_space_available / single_digit_height)
+        self.y = ((self.digits_rect.bottom - self.digits_rect.top) - (
+                    self.rows * single_digit_height)) / (
+                             self.rows + 1)  # Space between rows width
 
     def keys_initialization(self):
         self.square_1_y_pos = self.switch_keys_layout_rect.y if self.keys_layout == 0 else self.back_button_rect.y
@@ -250,7 +296,7 @@ class PiGame:
 
         # Main rectangle for digits initialization
         self.digits_rect = pg.Rect(self.screen_width * 0.06, self.screen_height * 0.1,
-                                   self.screen_width * 0.6, self.screen_height * 0.822)
+                                   self.screen_width * 0.6, self.screen_height * 0.8)
 
         # Texts
         self.digits_in_columns_text, self.digits_in_columns_rect = self.create_text_and_rect(
@@ -268,7 +314,8 @@ class PiGame:
         )
         self.digits_on_page_text, self.digits_on_page_rect = self.create_text_and_rect(
             "Digits on page:", 'calibri', 40, self.digits_in_columns_rect.centerx,
-            self.page_change_multiplier_rect.bottom + 0.5 * ((self.digits_rect.bottom - self.screen_height*0.08) - self.page_change_multiplier_rect.bottom)
+            self.page_change_multiplier_rect.bottom + 0.5 * (
+                        (self.digits_rect.bottom - self.screen_height * 0.08) - self.page_change_multiplier_rect.bottom)
         )
 
         # Buttons and counters
@@ -463,7 +510,8 @@ class PiGame:
 
         self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
             'Back', 'candara', 60, self.start_button_rect.left,
-            self.start_button_rect.bottom + self.start_button_rect.height * 0.2, self.screen_width * 0.16, self.screen_height * 0.08
+            self.start_button_rect.bottom + self.start_button_rect.height * 0.2, self.screen_width * 0.16,
+            self.screen_height * 0.08
         )
 
         # Counters
@@ -524,7 +572,6 @@ class PiGame:
             self.guessing_rect.bottom + 2.8 * self.guessing_rect.height * 1.05
         )
 
-
         self.your_time_text, self.your_time_rect = self.create_text_and_rect(
             "Your time:", 'candara', 72, self.back_button_rect.centerx,
             self.guessing_rect.bottom + self.guessing_rect.height * 1.4
@@ -577,25 +624,6 @@ class PiGame:
         # Keyboard initialization method
         self.keys_initialization()
 
-    def learning_screen_logic(self):
-        self.learning_screen_objects()
-
-        # Mapping digits_in_columns_counter values to x and columns
-        settings = {
-            1: (50, 20),
-            2: (55, 15),
-            3: (70, 10),
-            4: (85, 6),
-            5: (85, 6),
-            6: (110, 5),
-            7: (105, 4),
-            8: (105, 4),
-            9: (135, 3),
-            10: (135, 3)
-        }
-
-        # Main settings (50, 20)
-        self.x, self.columns = settings.get(self.digits_in_columns_counter, (50, 20))
 
     def nickname_screen(self):
         input_active = False  # Inactive insert box in the beginning
@@ -606,7 +634,8 @@ class PiGame:
         nick_length = 20
 
         # Nick inserting box initialization
-        nick_rect = pg.Rect(self.screen_width * 0.5, self.screen_height * 0.45, self.screen_width * 0.16, self.screen_height * 0.08)
+        nick_rect = pg.Rect(self.screen_width * 0.5, self.screen_height * 0.45, self.screen_width * 0.16,
+                            self.screen_height * 0.08)
         text = ''
         nick_inserted = False
 
@@ -646,16 +675,26 @@ class PiGame:
             self.screen.fill('black')
 
             # "Enter your nickname" text
-            prompt_text, prompt_rect = self.create_text_and_rect("Enter your nickname:", 'candara', 60, self.screen_width * 0.5, self.screen_height * 0.35)
+            prompt_text, prompt_rect = self.create_text_and_rect("Enter your nickname:", 'candara', 60,
+                                                                 self.screen_width * 0.5, self.screen_height * 0.35)
             self.screen.blit(prompt_text, prompt_rect)
 
             # Inserted text rendering
-            nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35, self.screen_width * 0.42 - x_offset, self.screen_height * 0.45, self.screen_width * 0.16 + x_offset * 2, self.screen_height * 0.08, color=color)
+            nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35,
+                                                                               self.screen_width * 0.42 - x_offset,
+                                                                               self.screen_height * 0.45,
+                                                                               self.screen_width * 0.16 + x_offset * 2,
+                                                                               self.screen_height * 0.08, color=color)
             if nick_rect.right - nick_text_rect.right < 25:
                 x_offset += 17.5
             elif nick_rect.width > self.screen_width * 0.16 and nick_rect.right - nick_text_rect.right > 25:
                 x_offset -= 17.5
-                nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35, self.screen_width * 0.42 - x_offset, self.screen_height * 0.45, self.screen_width * 0.16 + x_offset * 2, self.screen_height * 0.08, color=color)
+                nick_text, nick_rect, nick_text_rect = self.create_button_and_rect(str(text), 'cambria', 35,
+                                                                                   self.screen_width * 0.42 - x_offset,
+                                                                                   self.screen_height * 0.45,
+                                                                                   self.screen_width * 0.16 + x_offset * 2,
+                                                                                   self.screen_height * 0.08,
+                                                                                   color=color)
 
             # Buttons drawing
             self.draw_button(nick_rect, nick_text, nick_text_rect, color=color)
@@ -688,7 +727,7 @@ class PiGame:
                     main_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.quit_button_rect.collidepoint(event.pos):
-                        exit()
+                        sys.exit()
                     if self.learning_button_rect.collidepoint(event.pos):
                         self.learning_screen()
                     if self.training_button_rect.collidepoint(event.pos):
@@ -809,7 +848,7 @@ class PiGame:
         self.text_entries = {}
         for name, rect in text_entries_data:
             entry = pygame_gui.elements.UITextEntryLine(
-                relative_rect=pg.Rect((rect.left-5, rect.top), (60, 60)),
+                relative_rect=pg.Rect((rect.left - 5, rect.top), (60, 60)),
                 manager=self.manager)
             entry.hide()
             self.text_entries[name] = entry
@@ -932,7 +971,8 @@ class PiGame:
         if displayed_base_text_str:
             self.base_text_rect = base_text.get_rect(
                 center=(
-                self.guessed_digits_text_rect.left - 0.5 * base_text.get_width(), self.guessing_rect.centery + 8))
+                    self.guessed_digits_text_rect.left - 0.5 * base_text.get_width(), self.guessing_rect.centery + 8)
+            )
 
         # Text indicating the digit number
         self.digit_number_text = self.fonts['calibri'][55].render(
@@ -941,7 +981,6 @@ class PiGame:
             center=(self.guessing_rect.centerx, self.guessing_rect.bottom + 0.4 * self.guessing_rect.height))
 
         # Drawing elements
-        # if displayed_base_text_str:  # Only blit `base_text` if it has content
         self.screen.blit(base_text, self.base_text_rect)
         self.screen.blit(guessed_digits_text, self.guessed_digits_text_rect)
         self.screen.blit(self.digit_number_text, self.digit_number_rect)
@@ -1124,7 +1163,7 @@ class PiGame:
         self.text_entries = {}
         for name, rect in text_entries_data:
             entry = pygame_gui.elements.UITextEntryLine(
-                relative_rect=pg.Rect((rect.left-5, rect.top), (60, 60)),
+                relative_rect=pg.Rect((rect.left - 5, rect.top), (60, 60)),
                 manager=self.manager)
             entry.hide()
             self.text_entries[name] = entry
@@ -1366,7 +1405,9 @@ class PiGame:
                     nick = self.nickname_screen()
                     digits = self.goal_digit_counter
                     mistakes_ratio = str(f"{mistakes_allowed - self.mistakes_allowed_counter}/{mistakes_allowed}")
-                    score = self.calculate_score(digits, self.average_thinking_time, self.thinking_time_counter, total_time, mistakes_allowed - self.mistakes_allowed_counter, mistakes_allowed)
+                    score = self.calculate_score(digits, self.average_thinking_time, self.thinking_time_counter,
+                                                 total_time, mistakes_allowed - self.mistakes_allowed_counter,
+                                                 mistakes_allowed)
                     self.save_to_highscores(nick, digits, self.average_thinking_time, total_time, mistakes_ratio, score)
                 challenge_running = False
                 self.main_values()
@@ -1437,11 +1478,12 @@ class PiGame:
             pg.display.flip()
             self.clock.tick(60)
 
-    def calculate_score(self, digits_inserted, avg_thinking_time, time_for_thinking, total_time, mistakes_made, mistakes_allowed):
+    def calculate_score(self, digits_inserted, avg_thinking_time, time_for_thinking, total_time, mistakes_made,
+                        mistakes_allowed):
         digits_inserted_points = digits_inserted * 2.6
-        thinking_time_points = 0.5 * (65 - time_for_thinking) + (10 * (1/avg_thinking_time+0.1))
-        total_time_points = (15 * digits_inserted) * (1/total_time)
-        mistakes_points = (5 * (5 - mistakes_made)) * (5 * (1/mistakes_allowed))
+        thinking_time_points = 0.5 * (65 - time_for_thinking) + (10 * (1 / avg_thinking_time + 0.1))
+        total_time_points = (15 * digits_inserted) * (1 / total_time)
+        mistakes_points = (5 * (5 - mistakes_made)) * (5 * (1 / mistakes_allowed))
 
         # Final score calculation
         score = int(digits_inserted_points + thinking_time_points + total_time_points + mistakes_points)
@@ -1452,7 +1494,8 @@ class PiGame:
         self.highscores_title_text, self.highscores_title_rect = self.create_text_and_rect(
             "High Scores", 'cambria', 75, self.screen_width * 0.5, self.screen_height * 0.1)
         self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.create_button_and_rect(
-            "Back", 'candara', 60, self.highscores_title_rect.centerx - self.screen_width * 0.1, self.screen_height * 0.80,
+            "Back", 'candara', 60, self.highscores_title_rect.centerx - self.screen_width * 0.1,
+                                   self.screen_height * 0.80,
                                    self.screen_width * 0.20, self.screen_height * 0.1
         )
 
@@ -1517,7 +1560,8 @@ class PiGame:
         highscores_list = self.read_from_highscores()
 
         # Add a new result and sort the list descending by result.
-        highscores_list.append((nick, digits, f"{avg_thinking_time:.2f}/{self.thinking_time_counter:.2f}", f"{total_time:.2f}", mistakes_ratio, int(score)))
+        highscores_list.append((nick, digits, f"{avg_thinking_time:.2f}/{self.thinking_time_counter:.2f}",
+                                f"{total_time:.2f}", mistakes_ratio, int(score)))
         highscores_list = sorted(highscores_list, key=lambda x: float(x[5]), reverse=True)[
                           :10]
 
@@ -1546,4 +1590,3 @@ class PiGame:
 if __name__ == '__main__':
     game = PiGame()
     game.main_screen()
-
