@@ -660,18 +660,25 @@ class PiGame:
             self.screen.blit(self.images['logo'], self.game_logo)
 
             # Drawing buttons
-            self.helpers.draw_button(self.learning_button_rect, self.learning_button_text, self.learning_button_text_rect)
-            self.helpers.draw_button(self.training_button_rect, self.training_button_text, self.training_button_text_rect)
-            self.helpers.draw_button(self.challenge_button_rect, self.challenge_button_text, self.challenge_button_text_rect)
-            self.helpers.draw_button(self.highscores_button_rect, self.highscores_button_text, self.highscores_button_text_rect)
+            self.helpers.draw_button(self.learning_button_rect, self.learning_button_text,
+                                     self.learning_button_text_rect)
+            self.helpers.draw_button(self.training_button_rect, self.training_button_text,
+                                     self.training_button_text_rect)
+            self.helpers.draw_button(self.challenge_button_rect, self.challenge_button_text,
+                                     self.challenge_button_text_rect)
+            self.helpers.draw_button(self.highscores_button_rect, self.highscores_button_text,
+                                     self.highscores_button_text_rect)
             self.helpers.draw_button(self.quit_button_rect, self.quit_button_text, self.quit_button_text_rect)
 
             for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    main_running = False
+                if event.type == pg.QUIT:  # Application exit handling
+                    if self.helpers.show_confirmation_dialog(self.screen):
+                        main_running = False
+
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.quit_button_rect.collidepoint(event.pos):
-                        sys.exit()
+                        if self.helpers.show_confirmation_dialog(self.screen):
+                            main_running = False
                     if self.learning_button_rect.collidepoint(event.pos):
                         self.learning_screen()
                     if self.training_button_rect.collidepoint(event.pos):
@@ -681,10 +688,12 @@ class PiGame:
                     if self.highscores_button_rect.collidepoint(event.pos):
                         self.highscores_screen()
 
-            pg.display.flip()
-            self.clock.tick(60)  # Screen refresh frequency
 
-        pg.quit()  # Close pygame after loop ends
+            pg.display.update()
+            self.clock.tick(60)
+
+        pg.quit()
+        sys.exit()
 
     def learning_screen(self):
         learning_running = True
@@ -990,11 +999,20 @@ class PiGame:
 
         def handle_button_clicks(event_pos):
             """Helper function to handle button clicks."""
-            nonlocal reset_time
+            nonlocal reset_time, start_time
 
             # Back button handling
             if self.back_button_rect.collidepoint(event_pos):
-                return False  # Exit training screen
+                pause_start_time = time.time()  # Pause start time saving
+                # Confirmation popup
+                if self.helpers.show_confirmation_dialog(self.screen):  # Yes choice
+                    return False  # Exit training screen
+                else:  # "No" choice
+                    pause_end_time = time.time()
+                    pause_duration = pause_end_time - pause_start_time
+
+                    start_time += pause_duration
+                    reset_time += pause_duration
 
             # Switch button handling
             if self.switch_on.collidepoint(event_pos):
@@ -1351,8 +1369,9 @@ class PiGame:
                     self.screen.blit(getattr(self, f'square_{i}_text'), getattr(self, f'square_{i}_text_rect'))
 
         def handle_button_clicks(event_pos):
-            nonlocal challenge_running, thinking_start_time, nick, total_time, mistakes_allowed
+            nonlocal challenge_running, thinking_start_time, start_time, nick, total_time, mistakes_allowed
             if self.back_button_rect.collidepoint(event_pos):
+                pause_start_time = time.time()  # pause start time saving
                 if self.goal_reached:
                     nick = self.nickname_screen()
                     digits = self.goal_digit_counter
@@ -1360,10 +1379,24 @@ class PiGame:
                     score = self.calculate_score(digits, self.average_thinking_time, self.thinking_time_counter,
                                                  total_time, mistakes_allowed - self.mistakes_allowed_counter,
                                                  mistakes_allowed)
-                    self.helpers.save_to_highscores(nick, digits, self.average_thinking_time, total_time, mistakes_ratio, score, self.thinking_time_counter)
-                challenge_running = False
-                self.main_values()
-                self.challenge_screen_settings()
+                    self.helpers.save_to_highscores(nick, digits, self.average_thinking_time, total_time,
+                                                    mistakes_ratio, score, self.thinking_time_counter)
+                    challenge_running = False
+                    self.main_values()
+                    self.challenge_screen_settings()
+                else:
+                    if self.helpers.show_confirmation_dialog(self.screen):  # "Yes" choice
+                        challenge_running = False
+                        self.main_values()
+                        self.challenge_screen_settings()
+                    else:  # "No" choice
+                        pause_end_time = time.time()
+                        pause_duration = pause_end_time - pause_start_time
+
+                        # Start time updating
+                        thinking_start_time += pause_duration
+                        start_time += pause_duration
+
             elif not self.game_over and not self.goal_reached:
                 if self.switch_keys_layout_rect.collidepoint(event_pos):
                     self.keys_layout = 1 - self.keys_layout
@@ -1412,7 +1445,7 @@ class PiGame:
             if self.game_over:
                 self.screen.blit(self.game_text, self.game_rect)
                 self.screen.blit(self.over_text, self.over_rect)
-                pi_digits = self.helpers.read_pi_digits()[self.start_digit_counter - 1:]
+                pi_digits = self.helpers.read_pi_digits()[self.start_digit_counter + 1:]
                 correct_digits_text = self.fonts['calibri'][60].render(
                     f"Should be: {pi_digits[len(self.user_input):len(self.user_input) + 5]}...", True, 'yellow')
                 correct_digits_rect = correct_digits_text.get_rect(
@@ -1432,8 +1465,9 @@ class PiGame:
 
     def calculate_score(self, digits_inserted, avg_thinking_time, time_for_thinking, total_time, mistakes_made,
                         mistakes_allowed):
+
         digits_inserted_points = digits_inserted * 2.6
-        thinking_time_points = 0.5 * (65 - time_for_thinking) + (10 * (1 / avg_thinking_time + 0.1))
+        thinking_time_points = 0.5 * (65 - time_for_thinking) + (10 * (1 / avg_thinking_time))
         total_time_points = (15 * digits_inserted) * (1 / total_time)
         mistakes_points = (5 * (5 - mistakes_made)) * (5 * (1 / mistakes_allowed))
 

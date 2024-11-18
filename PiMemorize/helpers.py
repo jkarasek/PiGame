@@ -87,3 +87,58 @@ class Helpers:
             pass
 
         return highscores_list
+
+    def show_confirmation_dialog(self, screen):
+        """Wyświetla okno potwierdzenia z opcjami 'Tak' i 'Nie' z wykorzystaniem metod pomocniczych."""
+
+        # Tworzenie powierzchni dialogowej
+        dialog_surface = pg.Surface((400, 200))
+        dialog_surface.fill((50, 50, 50))  # Tło dialogu
+        dialog_rect = dialog_surface.get_rect(center=screen.get_rect().center)
+
+        # Tworzenie tekstu pytania
+        text, text_rect = self.create_text_and_rect(
+            "Are you sure?", 'calibri', 35, dialog_rect.width // 2, dialog_rect.height // 4
+        )
+
+        # Tworzenie przycisków "Yes" i "No" w lokalnym układzie współrzędnych dialog_surface
+        yes_text, yes_button_rect, yes_text_rect = self.create_button_and_rect(
+            "Yes", 'calibri', 35, dialog_rect.width // 4 - 50, dialog_rect.height // 3 + 50, 100, 50, 'white'
+        )
+        no_text, no_button_rect, no_text_rect = self.create_button_and_rect(
+            "No", 'calibri', 35, (dialog_rect.width * 3) // 4 - 50, dialog_rect.height // 3 + 50, 100, 50, 'white'
+        )
+
+        pg.event.clear()  # Czyści kolejkę zdarzeń, aby uniknąć konfliktów
+
+        running = True
+        while running:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return False  # Wyjście z gry
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    # Dopasowanie pozycji myszki do globalnego układu współrzędnych
+                    mouse_pos = (event.pos[0] - dialog_rect.x, event.pos[1] - dialog_rect.y)
+                    if yes_button_rect.collidepoint(mouse_pos):  # Kliknięto "Yes"
+                        return True
+                    if no_button_rect.collidepoint(mouse_pos):  # Kliknięto "No"
+                        return False
+
+            # Rysowanie tła dialogu
+            dialog_surface.fill((50, 50, 50))
+
+            # Rysowanie tekstu pytania
+            dialog_surface.blit(text, text_rect)
+
+            # Rysowanie przycisków "Yes" i "No"
+            pg.draw.rect(dialog_surface, 'green', yes_button_rect)
+            pg.draw.rect(dialog_surface, 'red', no_button_rect)
+            dialog_surface.blit(yes_text, yes_text_rect)
+            dialog_surface.blit(no_text, no_text_rect)
+
+            # Wyświetlanie dialogu na ekranie
+            screen.blit(dialog_surface, dialog_rect.topleft)
+            pg.display.flip()  # Aktualizacja ekranu
+
+
+
