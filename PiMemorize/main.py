@@ -69,6 +69,7 @@ class PiGame:
         self.goal_digit_multipliers = [25, 50, 100, 250, 500]
         self.goal_digit_multiplier_counter = 25
 
+        self.goal_reached = False
         self.game_over = False
         self.user_input = []
 
@@ -561,7 +562,7 @@ class PiGame:
 
         # Back button
         self.back_button_text, self.back_button_rect, self.back_button_text_rect = self.helpers.create_button_and_rect(
-            "Back", 'candara', 60, self.guessing_rect.right - self.screen_width * 0.24,
+            "OK" if self.goal_reached or self.game_over else "Back", 'candara', 60, self.guessing_rect.right - self.screen_width * 0.24,
                                    self.switch_keys_layout_rect.bottom + self.switch_keys_layout_rect.height * 1.7,
                                    self.screen_width * 0.24, self.screen_height * 0.12
         )
@@ -585,60 +586,61 @@ class PiGame:
 
         # Submit button
         submit_text, submit_rect, submit_text_rect = self.helpers.create_button_and_rect("Submit", 'cambria', 35,
-                                                                                 nick_rect.x - self.screen_width * 0.06,
-                                                                                 nick_rect.bottom + nick_rect.height * 0.6,
-                                                                                 self.screen_width * 0.12,
-                                                                                 self.screen_height * 0.08)
+                                                                                         nick_rect.x - self.screen_width * 0.06,
+                                                                                         nick_rect.bottom + nick_rect.height * 0.6,
+                                                                                         self.screen_width * 0.12,
+                                                                                         self.screen_height * 0.08)
 
         while not nick_inserted:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     nick_inserted = True
                 elif event.type == pg.MOUSEBUTTONDOWN:
-                    if submit_rect.collidepoint(event.pos):
-                        self.player_nick = text  # Nick saving
-                        nick_inserted = True  # Submit inserted nick
-                    if nick_rect.collidepoint(event.pos):
+                    if submit_rect.collidepoint(event.pos):  # Submit button click handling
+                        self.player_nick = text if text else 'Player'  # Nick saving
+                        nick_inserted = True  # Confirmation
+                    if nick_rect.collidepoint(event.pos):  # input field activation
                         input_active = True
                         color = color_active
-                    else:
+                    else:  # outside input field click
                         input_active = False
                         color = color_inactive
                 elif event.type == pg.KEYDOWN:
-                    if input_active:
-                        if event.key == pg.K_RETURN:
-                            self.player_nick = text  # Nick saving
-                            nick_inserted = True  # Submit inserted nick
-                        elif event.key == pg.K_BACKSPACE:
-                            text = text[:-1]  # Last character deleting
+                    if event.key == pg.K_RETURN:  # Enter key click handling
+                        self.player_nick = text if text else 'Player'  # Nick saving
+                        nick_inserted = True  # Confirmation
+                    elif input_active:  # if the field is active
+                        if event.key == pg.K_BACKSPACE:
+                            text = text[:-1]  # last character deleting
                         else:
-                            if len(text) < nick_length:  # Nick max length
-                                text += event.unicode  # Character adding
-            if text == '':
-                self.player_nick = 'Player'
+                            if len(text) < nick_length:  # Nick length limit
+                                text += event.unicode  # character inserting
+
             self.screen.fill('black')
 
             # "Enter your nickname" text
             prompt_text, prompt_rect = self.helpers.create_text_and_rect("Enter your nickname:", 'candara', 60,
-                                                                 self.screen_width * 0.5, self.screen_height * 0.35)
+                                                                         self.screen_width * 0.5,
+                                                                         self.screen_height * 0.35)
             self.screen.blit(prompt_text, prompt_rect)
 
             # Inserted text rendering
             nick_text, nick_rect, nick_text_rect = self.helpers.create_button_and_rect(str(text), 'cambria', 35,
-                                                                               self.screen_width * 0.42 - x_offset,
-                                                                               self.screen_height * 0.45,
-                                                                               self.screen_width * 0.16 + x_offset * 2,
-                                                                               self.screen_height * 0.08, color=color)
+                                                                                       self.screen_width * 0.42 - x_offset,
+                                                                                       self.screen_height * 0.45,
+                                                                                       self.screen_width * 0.16 + x_offset * 2,
+                                                                                       self.screen_height * 0.08,
+                                                                                       color=color)
             if nick_rect.right - nick_text_rect.right < 25:
                 x_offset += 17.5
             elif nick_rect.width > self.screen_width * 0.16 and nick_rect.right - nick_text_rect.right > 25:
                 x_offset -= 17.5
                 nick_text, nick_rect, nick_text_rect = self.helpers.create_button_and_rect(str(text), 'cambria', 35,
-                                                                                   self.screen_width * 0.42 - x_offset,
-                                                                                   self.screen_height * 0.45,
-                                                                                   self.screen_width * 0.16 + x_offset * 2,
-                                                                                   self.screen_height * 0.08,
-                                                                                   color=color)
+                                                                                           self.screen_width * 0.42 - x_offset,
+                                                                                           self.screen_height * 0.45,
+                                                                                           self.screen_width * 0.16 + x_offset * 2,
+                                                                                           self.screen_height * 0.08,
+                                                                                           color=color)
 
             # Buttons drawing
             self.helpers.draw_button(nick_rect, nick_text, nick_text_rect, color=color)
@@ -687,7 +689,6 @@ class PiGame:
                         self.challenge_screen_settings()
                     if self.highscores_button_rect.collidepoint(event.pos):
                         self.highscores_screen()
-
 
             pg.display.update()
             self.clock.tick(60)
@@ -806,6 +807,12 @@ class PiGame:
             entry.hide()
             self.text_entries[name] = entry
 
+        def deactivate_all_entries():
+            """Hide and deactivate all text entries."""
+            for entry in self.text_entries.values():
+                entry.unfocus()
+                entry.hide()
+
         def draw_texts():
             self.screen.blit(self.training_mode_title_text, self.training_mode_title_rect)
             self.screen.blit(self.choose_start_point_text, self.choose_start_point_rect)
@@ -825,20 +832,27 @@ class PiGame:
         def handle_button_clicks(event_pos):
             """Helper function to handle button clicks."""
             if self.back_button_rect.collidepoint(event_pos):
+                deactivate_all_entries()  # Deactivate all entries on exit
                 return False  # Exit the settings screen
 
             if self.start_button_rect.collidepoint(event_pos):
+                deactivate_all_entries()  # Deactivate all entries before starting the training screen
                 self.training_screen()
                 return False  # Start the training screen
 
             # Text entry handling after activation
+            clicked_inside_entry = False
             for name, rect in text_entries_data:
-                if rect.collidepoint(event.pos):
+                if rect.collidepoint(event_pos):
+                    deactivate_all_entries()  # Deactivate other entries
                     entry = self.text_entries[name]
                     entry.set_text(str(getattr(self, name)))
                     entry.show()
                     entry.focus()
-                    return True
+                    clicked_inside_entry = True
+
+            if not clicked_inside_entry:
+                deactivate_all_entries()  # Deactivate all entries if clicked outside
 
             # Handle start_digit - and + buttons
             if self.start_digit_minus.collidepoint(event_pos):
@@ -857,8 +871,9 @@ class PiGame:
                 self.digit_multiplier_counter = self.digit_multipliers[current_index + 1]
 
             self.training_screen_settings_objects()
-            self.digit_multiplier_counter_text = self.helpers.create_text("x" + str(self.digit_multiplier_counter), 'candara',
-                                                                  50)
+            self.digit_multiplier_counter_text = self.helpers.create_text("x" + str(self.digit_multiplier_counter),
+                                                                          'candara',
+                                                                          50)
 
             return True  # Continue running
 
@@ -1134,6 +1149,12 @@ class PiGame:
             entry.hide()
             self.text_entries[name] = entry
 
+        def deactivate_all_entries():
+            """Hide and deactivate all text entries."""
+            for entry in self.text_entries.values():
+                entry.unfocus()
+                entry.hide()
+
         def draw_texts():
             # Drawing titles and labels
             self.screen.blit(self.challenge_mode_title_text, self.challenge_mode_title_rect)
@@ -1184,10 +1205,12 @@ class PiGame:
         def handle_button_clicks():
             """Helper function to handle button clicks."""
             if self.back_button_rect.collidepoint(event.pos):
+                deactivate_all_entries()  # Deactivate all entries on exit
                 self.main_screen()
                 return False  # Exit the settings screen
 
             if self.start_button_rect.collidepoint(event.pos):
+                deactivate_all_entries()  # Deactivate all entries on exit
                 self.challenge_screen()
                 return False  # Start the challenge screen
 
@@ -1263,6 +1286,20 @@ class PiGame:
                     challenge_settings_running = False
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     challenge_settings_running = handle_button_clicks()
+                    # Handle text entry activation
+                    clicked_inside_entry = False
+                    for name, rect in text_entries_data:
+                        if rect.collidepoint(event.pos):
+                            deactivate_all_entries()
+                            entry = self.text_entries[name]
+                            entry.set_text(str(getattr(self, name)))
+                            entry.show()
+                            entry.focus()
+                            clicked_inside_entry = True
+                            break
+
+                    if not clicked_inside_entry:
+                        deactivate_all_entries()
                 elif event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
                     for name, entry in self.text_entries.items():
                         if event.ui_element == entry:
@@ -1306,7 +1343,6 @@ class PiGame:
         thinking_start_time = time.time()
 
         self.incorrect_square_number = None
-        self.goal_reached = False
         self.average_thinking_time = 0
 
         total_time = None  # Time of challenge ending (initialization)
@@ -1371,31 +1407,22 @@ class PiGame:
         def handle_button_clicks(event_pos):
             nonlocal challenge_running, thinking_start_time, start_time, nick, total_time, mistakes_allowed
             if self.back_button_rect.collidepoint(event_pos):
-                pause_start_time = time.time()  # pause start time saving
-                if self.goal_reached:
-                    nick = self.nickname_screen()
-                    digits = self.goal_digit_counter
-                    mistakes_ratio = str(f"{mistakes_allowed - self.mistakes_allowed_counter}/{mistakes_allowed}")
-                    score = self.calculate_score(digits, self.average_thinking_time, self.thinking_time_counter,
-                                                 total_time, mistakes_allowed - self.mistakes_allowed_counter,
-                                                 mistakes_allowed)
-                    self.helpers.save_to_highscores(nick, digits, self.average_thinking_time, total_time,
-                                                    mistakes_ratio, score, self.thinking_time_counter)
-                    challenge_running = False
-                    self.main_values()
-                    self.challenge_screen_settings()
-                else:
-                    if self.helpers.show_confirmation_dialog(self.screen):  # "Yes" choice
-                        challenge_running = False
-                        self.main_values()
-                        self.challenge_screen_settings()
-                    else:  # "No" choice
-                        pause_end_time = time.time()
-                        pause_duration = pause_end_time - pause_start_time
-
-                        # Start time updating
-                        thinking_start_time += pause_duration
-                        start_time += pause_duration
+                if self.game_over:
+                    handle_back_button_logic()  # without confirmation popup
+                else:  # if not game over, show confirmation popup
+                    pause_start_time = time.time()  # Pause start time saving
+                    if self.goal_reached:
+                        handle_back_button_logic()
+                    else:
+                        if self.helpers.show_confirmation_dialog(self.screen):  # "Yes" choice
+                            challenge_running = False
+                            self.main_values()
+                            self.challenge_screen_settings()
+                        else:  # "No" choice
+                            pause_end_time = time.time()
+                            pause_duration = pause_end_time - pause_start_time
+                            thinking_start_time += pause_duration
+                            start_time += pause_duration
 
             elif not self.game_over and not self.goal_reached:
                 if self.switch_keys_layout_rect.collidepoint(event_pos):
@@ -1406,8 +1433,30 @@ class PiGame:
                         if self.draw_digits(str(i)):
                             update_thinking_times()
 
+        def handle_back_button_logic():
+            """Logic for handling back button or equivalent actions"""
+            nonlocal challenge_running, nick, total_time, mistakes_allowed
+            if self.goal_reached:
+                nick = self.nickname_screen()
+                digits = self.goal_digit_counter
+                mistakes_ratio = str(f"{mistakes_allowed - self.mistakes_allowed_counter}/{mistakes_allowed}")
+                score = self.calculate_score(digits, self.average_thinking_time, self.thinking_time_counter,
+                                             total_time, mistakes_allowed - self.mistakes_allowed_counter,
+                                             mistakes_allowed)
+                self.helpers.save_to_highscores(nick, digits, self.average_thinking_time, total_time,
+                                                mistakes_ratio, score, self.thinking_time_counter)
+            challenge_running = False
+            self.main_values()
+            self.challenge_screen_settings()
+
         def handle_key_events(event_key):
-            nonlocal thinking_start_time
+            """Keyboard events handling."""
+            nonlocal challenge_running, nick, total_time, mistakes_allowed
+
+            if event_key == pg.K_RETURN:  # Enter key pressed
+                if self.goal_reached or self.game_over:  # When the goal is reached or the game is over
+                    handle_back_button_logic()
+
             if not self.game_over and not self.goal_reached:
                 if pg.K_0 <= event_key <= pg.K_9:
                     digit = event_key - pg.K_0
