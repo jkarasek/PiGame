@@ -659,6 +659,7 @@ class PiGame:
 
     def main_screen(self):
         main_running = True
+        buttons = ('learning', 'training', 'challenge', 'highscores', 'quit')
         self.main_screen_objects()
 
         while main_running:
@@ -668,15 +669,12 @@ class PiGame:
             self.screen.blit(self.images['logo'], self.game_logo)
 
             # Drawing buttons
-            self.helpers.draw_button(self.learning_button_rect, self.learning_button_text,
-                                     self.learning_button_text_rect)
-            self.helpers.draw_button(self.training_button_rect, self.training_button_text,
-                                     self.training_button_text_rect)
-            self.helpers.draw_button(self.challenge_button_rect, self.challenge_button_text,
-                                     self.challenge_button_text_rect)
-            self.helpers.draw_button(self.highscores_button_rect, self.highscores_button_text,
-                                     self.highscores_button_text_rect)
-            self.helpers.draw_button(self.quit_button_rect, self.quit_button_text, self.quit_button_text_rect)
+            for button in buttons:
+                self.helpers.draw_button(
+                    getattr(self, f"{button}_button_rect"),
+                    getattr(self, f"{button}_button_text"),
+                    getattr(self, f"{button}_button_text_rect")
+                )
 
             for event in pg.event.get():
                 if event.type == pg.QUIT:  # Application exit handling
@@ -696,7 +694,7 @@ class PiGame:
                     if self.highscores_button_rect.collidepoint(event.pos):
                         self.highscores_screen()
 
-            pg.display.update()
+            pg.display.flip()
             self.clock.tick(60)
 
         pg.quit()
