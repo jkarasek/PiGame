@@ -21,6 +21,9 @@ class PiGame:
         # Helpers class initialization
         self.helpers = Helpers(self.screen, self.fonts, self.images)
 
+        # Main_screen initialization
+        self.main_screen()
+
     def setup_display(self):
         self.screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
         screen_info = pg.display.Info()
@@ -76,27 +79,33 @@ class PiGame:
         for img in image_files:
             self.images[img] = pg.image.load(f'images/{img}.png')
 
+        # Images aliases
+        self.images['t_s_minus'] = self.images['minus']
+        self.images['t_s_plus'] = self.images['plus']
+
         self.scale_images()
 
     def scale_images(self):
-        self.images['logo'] = pg.transform.scale(self.images['logo'],
-                                                 (self.screen_width * 0.23, self.screen_height * 0.16))
-        self.images['minus'] = pg.transform.scale(self.images['minus'],
-                                                  (self.screen_width * 0.035, self.screen_width * 0.035))
-        self.images['plus'] = pg.transform.scale(self.images['plus'],
-                                                 (self.screen_width * 0.035, self.screen_width * 0.035))
-        self.images['t_s_minus'] = pg.transform.scale(self.images['minus'],
-                                                      (self.screen_width * 0.06, self.screen_width * 0.06))
-        self.images['t_s_plus'] = pg.transform.scale(self.images['plus'],
-                                                     (self.screen_width * 0.06, self.screen_width * 0.06))
-        self.images['switch_on'] = pg.transform.scale(self.images['switch_on'],
-                                                      (self.screen_width * 0.06, self.screen_width * 0.03))
-        self.images['switch_off'] = pg.transform.scale(self.images['switch_off'],
-                                                       (self.screen_width * 0.06, self.screen_width * 0.03))
-        self.images['switch_neutral'] = pg.transform.scale(self.images['switch_neutral'],
-                                                           (self.screen_width * 0.06, self.screen_width * 0.03))
-        self.images['heart'] = pg.transform.scale(self.images['heart'],
-                                                  (self.screen_width * 0.038, self.screen_width * 0.034))
+        # Scaling parameters
+        scaling_parameters = {
+            'logo': (0.23, 0.1),
+            'minus': (0.035, 0.035),
+            'plus': (0.035, 0.035),
+            't_s_minus': (0.06, 0.06),
+            't_s_plus': (0.06, 0.06),
+            'switch_on': (0.06, 0.03),
+            'switch_off': (0.06, 0.03),
+            'switch_neutral': (0.06, 0.03),
+            'heart': (0.038, 0.034),
+        }
+
+        for key, (width_factor, height_factor) in scaling_parameters.items():
+            if key in self.images:  # Checking if the key exist
+                self.images[key] = pg.transform.scale(
+                    self.images[key], (int(self.screen_width * width_factor), int(self.screen_width * height_factor))
+                )
+            else:
+                print(f"Warning: Missing key '{key}' in images.")
 
     def draw_learning_pi_digits(self):
         # Logic and starting parameters
@@ -970,7 +979,6 @@ class PiGame:
         single_digit_width, single_digit_height = self.fonts['calibri'][int(self.screen_width/23)].size("0")
         self.max_display_digits = int((self.guessing_rect.width - single_digit_width) / single_digit_width)  # Number of digits visible in guessing_rect
 
-
         # Drawing texts (time, digits, and labels)
         def draw_texts():
             formatted_time = f'{time.strftime("%M:%S", time.gmtime(self.training_elapsed_time))}.{int((self.training_elapsed_time % 1) * 100):02d}'
@@ -1599,4 +1607,3 @@ class PiGame:
 
 if __name__ == '__main__':
     game = PiGame()
-    game.main_screen()
