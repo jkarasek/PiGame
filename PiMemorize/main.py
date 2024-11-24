@@ -31,7 +31,7 @@ class PiGame:
 
     def setup_fonts(self):
         pg.font.init()
-        sizes = range(20, 151)  # All sizes from 20 to 150
+        sizes = range(10, 151)  # All sizes from 10 to 150
         font_names = ['candara', 'calibri', 'cambria']
         self.fonts = {name: {size: pg.font.SysFont(name, size) for size in sizes} for name in font_names}
 
@@ -133,15 +133,15 @@ class PiGame:
             pi_digits = pi_digits[(self.page_number_counter - 1) * self.digits_on_page_counter:]
 
         # Drawing positions resetting
-        x, y = self.x, self.y
+        x, y = self.columns_spacing, self.rows_spacing
         for i, chunk in enumerate([pi_digits[i:i + self.digits_in_columns_counter] for i in
                                    range(0, len(pi_digits), self.digits_in_columns_counter)]):
-            text = self.helpers.create_text(chunk, 'calibri', 40)
+            text = self.helpers.create_text(chunk, 'calibri', int(self.screen_width/50))
             rect = text.get_rect(center=(self.digits_rect.left + x, self.digits_rect.top + y))
 
             # Switching to the next row and rect positioning
             if rect.right > self.digits_rect.right:
-                x, y = self.x, y + self.y
+                x, y = self.columns_spacing, y + self.rows_spacing
                 rect.center = (self.digits_rect.left + x, self.digits_rect.top + y)
 
             # Checking whether the maximum height of the digit frame has been exceeded
@@ -153,7 +153,7 @@ class PiGame:
                 break
 
             # Switching to the next column
-            x += self.x + rect.width
+            x += self.columns_spacing + rect.width
             self.screen.blit(text, rect)
 
         # Displaying the digit range on the page
@@ -164,16 +164,16 @@ class PiGame:
 
         # Columns spacing logic
         columns_space_available = 0.5 * (self.digits_rect.right - self.digits_rect.left)
-        single_digit_width, single_digit_height = self.fonts['calibri'][40].size("0")
+        single_digit_width, single_digit_height = self.fonts['calibri'][int(self.screen_width/50)].size("0")
         self.columns = int(columns_space_available/(self.digits_in_columns_counter*single_digit_width))
-        self.x = ((self.digits_rect.right - self.digits_rect.left) - (
+        self.columns_spacing = ((self.digits_rect.right - self.digits_rect.left) - (
                     self.columns * (self.digits_in_columns_counter * single_digit_width))) / (
                              self.columns + 2)  # Space between columns width
 
         # Rows spacing logic
         rows_space_available = 0.5 * (self.digits_rect.bottom - self.digits_rect.top)
         self.rows = int(rows_space_available / single_digit_height)
-        self.y = ((self.digits_rect.bottom - self.digits_rect.top) - (
+        self.rows_spacing = ((self.digits_rect.bottom - self.digits_rect.top) - (
                     self.rows * single_digit_height)) / (
                              self.rows + 1)  # Space between rows width
 
@@ -969,13 +969,14 @@ class PiGame:
         self.training_screen_objects()
 
         start_time = time.time()  # Start time initialization
-        reset_time = time.time()  # Time of last interaction with digit squares
+        reset_time = time.time()  # Time of last interaction with digit squares initialization
 
         self.incorrect_square_number = None
         self.next_correct_digit = None  # Initially no digit highlighted
 
         single_digit_width, single_digit_height = self.fonts['calibri'][int(self.screen_width/23)].size("0")
-        self.max_display_digits = int((self.guessing_rect.width - single_digit_width) / single_digit_width)  # Number of digits visible in guessing_rect
+        dot_width, _ = self.fonts['calibri'][int(self.screen_width/23)].size(".")
+        self.max_display_digits = int((self.guessing_rect.width - dot_width) / single_digit_width)  # Number of digits visible in guessing_rect
 
         # Drawing texts (time, digits, and labels)
         def draw_texts():
@@ -990,22 +991,13 @@ class PiGame:
 
         # Drawing images and buttons
         def draw_images():
+            """Draw all static images and buttons."""
             self.screen.blit(self.images['t_s_minus'], self.hint_minus)
             self.screen.blit(self.images['t_s_plus'], self.hint_plus)
-
-            if self.switch_position == 0:
-                self.screen.blit(self.images['switch_off'], self.switch_off)
-            else:
-                self.screen.blit(self.images['switch_on'], self.switch_on)
-
+            self.screen.blit(self.images['switch_off' if self.switch_position == 0 else 'switch_on'], self.switch_on)
             pg.draw.rect(self.screen, 'white', self.guessing_rect, width=3)
             pg.draw.rect(self.screen, 'white', self.switch_keys_layout_rect, width=3)
-
-            if self.switch_position == 0:
-                pg.draw.rect(self.screen, (59, 59, 59), self.hint_rect, width=3)
-            else:
-                pg.draw.rect(self.screen, 'white', self.hint_rect, width=3)
-
+            pg.draw.rect(self.screen, (59, 59, 59) if self.switch_position == 0 else 'white', self.hint_rect, width=3)
             self.screen.blit(self.switch_keys_layout_text, self.switch_keys_layout_text_rect)
             self.screen.blit(self.hint_text, self.hint_text_rect)
             pg.draw.rect(self.screen, 'white', self.back_button_rect, 3)
@@ -1056,7 +1048,7 @@ class PiGame:
             # Handle square clicks (digits 0-9)
             for i in range(10):
                 if getattr(self, f'square_{i}_rect').collidepoint(event_pos):
-                    self.draw_digits(str(i))  # Add the clicked digit
+                    self.compare_digits(str(i))  # Add the clicked digit
                     reset_time = time.time()  # Time resetting
                     self.next_correct_digit = None  # Reset the next correct digit hint timer
                     return True  # Continue training screen
@@ -1069,16 +1061,16 @@ class PiGame:
 
             if pg.K_0 <= event_key <= pg.K_9:
                 digit = event_key - pg.K_0  # Convert key to digit (0-9)
-                self.draw_digits(str(digit))
+                self.compare_digits(str(digit))
                 reset_time = time.time()  # Time resetting
                 self.next_correct_digit = None
             elif 1073741913 <= event_key <= 1073741921:  # Numpad keys 1-9
                 digit = event_key - 1073741912
-                self.draw_digits(str(digit))
+                self.compare_digits(str(digit))
                 reset_time = time.time()  # Time resetting
                 self.next_correct_digit = None
             elif event_key == 1073741922:  # Numpad 0
-                self.draw_digits("0")
+                self.compare_digits("0")
                 reset_time = time.time()  # Time resetting
                 self.next_correct_digit = None
 
@@ -1117,7 +1109,7 @@ class PiGame:
             pg.display.flip()
             self.clock.tick(60)
 
-    def draw_digits(self, user_input):
+    def compare_digits(self, user_input):
         # Single digit width
         single_digit_width, _ = self.fonts['calibri'][int(self.screen_width / 23)].size("0")
 
@@ -1136,7 +1128,7 @@ class PiGame:
                 self.digits_display_offset += single_digit_width/2
             return True
         else:
-            self.mistakes_allowed_counter -= 1
+            self.mistakes_allowed_counter -= 1  # Working only in challenge_mode
             self.incorrect_square_number = user_input
 
     def challenge_screen_settings(self):
@@ -1442,7 +1434,7 @@ class PiGame:
                     self.challenge_screen_objects()
                 for i in range(10):
                     if getattr(self, f'square_{i}_rect').collidepoint(event_pos):
-                        if self.draw_digits(str(i)):
+                        if self.compare_digits(str(i)):
                             update_thinking_times()
 
         def handle_back_button_logic():
@@ -1472,11 +1464,11 @@ class PiGame:
             if not self.game_over and not self.goal_reached:
                 if pg.K_0 <= event_key <= pg.K_9:
                     digit = event_key - pg.K_0
-                    if self.draw_digits(str(digit)):
+                    if self.compare_digits(str(digit)):
                         update_thinking_times()
                 elif 1073741913 <= event_key <= 1073741922:
                     digit = event_key - 1073741912 if event_key != 1073741922 else 0
-                    if self.draw_digits(str(digit)):
+                    if self.compare_digits(str(digit)):
                         update_thinking_times()
 
         while challenge_running:
@@ -1583,7 +1575,7 @@ class PiGame:
                     x_offset = self.screen_width * 0.125  # Reset X position for each row
                     for value in entry:
                         # Display value under corresponding label
-                        value_text = self.helpers.create_text(str(value), 'cambria', size=int(self.screen_width/77))
+                        value_text = self.helpers.create_text(str(value), 'cambria', int(self.screen_width/76))
                         value_rect = value_text.get_rect(center=(x_offset, y_offset))
                         self.screen.blit(value_text, value_rect)
                         x_offset += self.screen_width * 0.15  # Move to the next column
