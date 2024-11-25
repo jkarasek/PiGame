@@ -1324,7 +1324,7 @@ class PiGame:
             pg.display.flip()
             self.clock.tick(60)
 
-    def hearts_drawing(self):
+    def draw_hearts(self):
         if self.mistakes_allowed_counter:
             for i in range(self.mistakes_allowed_counter):
                 mistakes_allowed_heart = self.images['heart'].get_rect(
@@ -1388,7 +1388,7 @@ class PiGame:
             thinking_start_time = time.time()  # Thinking time start reset
 
         def draw_elements():
-            self.hearts_drawing()
+            self.draw_hearts()
             pg.draw.rect(self.screen, 'white', self.guessing_rect, width=3)
             pg.draw.rect(self.screen, 'white', self.switch_keys_layout_rect, width=3)
             pg.draw.rect(self.screen, 'green' if self.game_over or self.goal_reached else 'white',
