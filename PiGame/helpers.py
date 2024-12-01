@@ -97,7 +97,7 @@ class Helpers:
     @staticmethod
     def read_pi_digits():
         try:
-            with open('pi_digits.txt', 'r') as file:
+            with open('../pi_digits.txt', 'r') as file:
                 return file.read().strip().replace('\n', '')
         except FileNotFoundError:
             return "Error: pi_digits.txt not found."
@@ -111,18 +111,18 @@ class Helpers:
         highscores_list = sorted(highscores_list, key=lambda x: float(x[5]), reverse=True)[:10]
 
         # Save updated list to the file
-        with open('highscores.txt', 'w') as file:
+        with open('../highscores.txt', 'w') as file:
             for nick, digits, avg_thinking_time, total_time, mistakes_ratio, score in highscores_list:
                 file.write(f"{nick},{digits},{avg_thinking_time},{total_time},{mistakes_ratio},{score}\n")
 
     @staticmethod
     def read_from_highscores():
-        if not os.path.exists('highscores.txt'):
+        if not os.path.exists('../highscores.txt'):
             return []  # Return an empty list if the file doesn't exist
 
         highscores_list = []
         try:
-            with open('highscores.txt', 'r') as file:
+            with open('../highscores.txt', 'r') as file:
                 for line in file:
                     nick, digits, avg_thinking_time, total_time, mistakes_ratio, score = line.strip().split(',')
                     highscores_list.append((nick, digits, avg_thinking_time, total_time, mistakes_ratio, score))

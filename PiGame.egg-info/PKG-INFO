@@ -1,0 +1,23 @@
+Metadata-Version: 2.1
+Name: PiGame
+Version: 0.1
+Summary: A game for learning Pi digits through various modes
+Home-page: https://github.com/jkarasek/PiGame
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+License-File: LICENCE
+Requires-Dist: pygame
+Requires-Dist: pygame_gui
+
+# PiGame
+
+PiGame is a fun and educational game designed to help you learn the digits of Pi through various game modes.
+
+## Features
+- **Learning Mode**: Explore Pi digits in a structured way.
+- **Training Mode**: Train your memory in efficient way.
+- **Challenge Mode**: Test your memory and speed.
+- **High Scores**: Save and compare your best scores.
+
+## Installation
+Install the game via pip:
