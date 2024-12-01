@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: PiMemorizeGame
-Version: 0.2
+Version: 0.3
 Summary: A game for learning Pi digits through various modes
 Home-page: https://github.com/jkarasek/PiGame
 Description-Content-Type: text/markdown
@@ -20,4 +20,8 @@ PiGame is a fun and educational game designed to help you learn the digits of Pi
 - **High Scores**: Save and compare your best scores.
 
 ## Installation
-Install the game via pip:
+### Install the game via pip:
+pip install PiMemorizeGame
+
+### Run executable script
+pimemorize
