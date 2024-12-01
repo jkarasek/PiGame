@@ -1,3 +1,11 @@
+
+"""
+Main entry point for the PiGame application.
+
+This module defines the main application logic and entry point for the PiGame.
+It includes the main game loop and logic for handling user interactions across different game screens.
+"""
+
 import math
 import sys
 import pygame as pg
@@ -7,6 +15,119 @@ from helpers import Helpers
 
 
 class PiGame:
+    """
+        A class used to manage the PiGame application, handling user interactions, game modes,
+        and the graphical interface for learning, training, and challenge modes.
+
+        Attributes
+        ----------
+        screen : pygame.Surface
+            The primary display surface for the game.
+        clock : pygame.time.Clock
+            Manages the timing and frame rate of the game loop.
+        manager : pygame_gui.UIManager
+            Handles GUI elements in the game.
+        fonts : dict
+            A dictionary of fonts categorized by their name and size.
+        images : dict
+            A dictionary of preloaded images used in the game.
+        user_input : list
+            A list of digits entered by the user during training and challenge modes.
+        keys_layout : int
+            Determines the layout of the on-screen keyboard (0 or 1).
+        switch_position : int
+            Tracks the position of the hint switch (on or off).
+        hint_counter : int
+            Specifies the delay (in seconds) before a hint is displayed.
+        mistakes_allowed_counter : int
+            Counts the number of mistakes the user can make in challenge mode.
+        goal_reached : bool
+            Indicates whether the user has reached their goal in challenge mode.
+        game_over : bool
+            Indicates whether the game is over due to mistakes or time limits.
+        page_number_counter : int
+            Tracks the current page number in the learning screen.
+        start_digit_counter : int
+            Tracks the starting digit index in training and challenge modes.
+        goal_digit_counter : int
+            Specifies the target number of digits to guess in challenge mode.
+        thinking_time_counter : int
+            Sets the time limit for thinking during the challenge.
+        digits_on_page_counter : int
+            Specifies the number of digits displayed on the current page in learning mode.
+        digit_counter : int
+            Tracks the number of correct digits entered by the user.
+        guessing_rect : pygame.Rect
+            Represents the rectangular area for displaying user guesses in training and challenge modes.
+
+        Methods
+        -------
+        __init__()
+            Initializes the game by setting up the display, fonts, and main screen.
+        setup_display()
+            Configures the game display for full-screen mode and retrieves screen dimensions.
+        setup_fonts()
+            Initializes a dictionary of fonts to be used across different screens and UI elements.
+        main_values()
+            Initializes key game variables such as counters, multipliers, and screen-specific settings.
+        images_initialization()
+            Preloads required images and scales them to appropriate dimensions for display.
+        scale_images()
+            Scales loaded images based on the screen dimensions and predefined scaling parameters.
+        main_screen()
+            Displays the main menu screen and handles navigation to other game screens.
+        main_screen_objects()
+            Initializes all buttons and graphical elements for the main menu screen.
+        learning_screen()
+            Manages the learning mode, including digit visualization and navigation through pages.
+        learning_screen_objects()
+            Creates and positions graphical elements specific to the learning screen.
+        draw_learning_pi_digits()
+            Handles the drawing of digits in the learning mode, including pagination.
+        learning_screen_logic()
+            Computes and updates the spacing of rows and columns on the learning screen.
+        training_screen()
+            Manages the training mode, including digit input and feedback for the user.
+        training_screen_objects()
+            Initializes graphical elements specific to the training screen.
+        guessing_rect_drawing()
+            Displays user input and feedback in the guessing area during training and challenge modes.
+        challenge_screen()
+            Manages the challenge mode, including score calculation, hints, and game-over logic.
+        challenge_screen_objects()
+            Initializes graphical elements specific to the challenge mode.
+        challenge_screen_settings()
+            Handles the settings screen for the challenge mode.
+        challenge_screen_settings_objects()
+            Creates and positions UI elements for configuring challenge settings.
+        training_screen_settings()
+            Handles the settings screen for the training mode.
+        training_screen_settings_objects()
+            Creates and positions UI elements for configuring training settings.
+        nickname_screen()
+            Prompts the user to enter a nickname before saving their high score.
+        calculate_score(digits_inserted, avg_thinking_time, time_for_thinking, total_time, mistakes_made, mistakes_allowed)
+            Calculates the user's score based on performance in challenge mode.
+        highscores_screen()
+            Displays the highscores table and allows the user to return to the main menu.
+        highscores_screen_objects()
+            Initializes graphical elements for the highscores screen.
+        draw_hearts()
+            Displays remaining mistakes as hearts during the challenge mode.
+        keys_initialization()
+            Initializes the on-screen keyboard layout for training and challenge modes.
+        compare_digits(user_input)
+            Compares the user's input with the correct digits and provides feedback.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the required image or highscores file is not found.
+        ValueError
+            If invalid parameters are passed to certain methods, such as invalid digit counters.
+
+        """
+
     def __init__(self):
         pg.init()
         self.setup_display()
@@ -1516,7 +1637,8 @@ class PiGame:
             pg.display.flip()
             self.clock.tick(60)
 
-    def calculate_score(self, digits_inserted, avg_thinking_time, time_for_thinking, total_time, mistakes_made,
+    @staticmethod
+    def calculate_score(digits_inserted, avg_thinking_time, time_for_thinking, total_time, mistakes_made,
                         mistakes_allowed):
 
         digits_inserted_points = digits_inserted * 2.6
