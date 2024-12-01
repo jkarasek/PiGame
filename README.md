@@ -10,7 +10,10 @@ PiGame is a fun and educational game designed to help you learn the digits of Pi
 
 ## Installation
 ### Install the game via pip:
+```
 pip install PiMemorizeGame
-
+```
 ### Run executable script
+```
 pimemorize
+```
