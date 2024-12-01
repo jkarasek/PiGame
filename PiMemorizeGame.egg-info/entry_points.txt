@@ -1,0 +1,2 @@
+[console_scripts]
+pimemorize = PiGame.main:PiGame

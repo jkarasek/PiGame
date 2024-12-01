@@ -8,10 +8,11 @@ It includes the main game loop and logic for handling user interactions across d
 
 import math
 import sys
+import os
 import pygame as pg
 import pygame_gui
 import time
-from helpers import Helpers
+from PiGame.helpers import Helpers
 
 
 class PiGame:
@@ -130,6 +131,7 @@ class PiGame:
 
     def __init__(self):
         pg.init()
+        self.base_path = os.path.dirname(__file__)
         self.setup_display()
         self.clock = pg.time.Clock()
         self.setup_fonts()
@@ -196,13 +198,24 @@ class PiGame:
 
     def images_initialization(self):
         self.images = {}
-        image_files = ['minus', 'plus', 'switch_on', 'switch_off', 'switch_neutral', 'heart', 'logo']
-        for img in image_files:
-            self.images[img] = pg.image.load(f'images/{img}.png')
+        images_path = os.path.join(self.base_path, 'images')  # Dynamic path to the images directory
 
-        # Images aliases
-        self.images['t_s_minus'] = self.images['minus']
-        self.images['t_s_plus'] = self.images['plus']
+        try:
+            for image_file in os.listdir(images_path):
+                if image_file.endswith('.png'):  # Only load PNG files
+                    image_key = os.path.splitext(image_file)[0]  # Remove the file extension to use as a key
+                    image_path = os.path.join(images_path, image_file)
+                    self.images[image_key] = pg.image.load(image_path)
+        except FileNotFoundError:
+            print(f"Error: Images directory '{images_path}' not found.")
+        except Exception as e:
+            print(f"Error loading images: {e}")
+
+        # Images aliases (optional)
+        if 'minus' in self.images:
+            self.images['t_s_minus'] = self.images['minus']
+        if 'plus' in self.images:
+            self.images['t_s_plus'] = self.images['plus']
 
         self.scale_images()
 

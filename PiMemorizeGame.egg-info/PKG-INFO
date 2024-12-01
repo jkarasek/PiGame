@@ -1,13 +1,13 @@
 Metadata-Version: 2.1
-Name: PiGame
-Version: 0.1
+Name: PiMemorizeGame
+Version: 0.2
 Summary: A game for learning Pi digits through various modes
 Home-page: https://github.com/jkarasek/PiGame
-Requires-Python: >=3.12
 Description-Content-Type: text/markdown
 License-File: LICENCE
-Requires-Dist: pygame
-Requires-Dist: pygame_gui
+Requires-Dist: pygame-ce>=2.5.2
+Requires-Dist: pygame_gui>=0.6.12
+Provides-Extra: pygame
 
 # PiGame
 

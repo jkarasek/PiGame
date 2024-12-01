@@ -54,6 +54,7 @@ class Helpers:
         self.screen = screen
         self.fonts = fonts
         self.images = images
+        self.base_path = os.path.dirname(__file__)
 
     def create_text(self, text, font_name, size, color='white'):
         return self.fonts[font_name][size].render(text, True, color)
@@ -94,15 +95,17 @@ class Helpers:
         pg.draw.rect(self.screen, color, button_rect, 3)
         self.screen.blit(button_text, button_text_rect)
 
-    @staticmethod
-    def read_pi_digits():
+    def read_pi_digits(self):
+        file_path = os.path.join(self.base_path, 'pi_digits.txt')
         try:
-            with open('../pi_digits.txt', 'r') as file:
+            with open(file_path, 'r') as file:
                 return file.read().strip().replace('\n', '')
         except FileNotFoundError:
             return "Error: pi_digits.txt not found."
 
-    def save_to_highscores(self, nick, digits, avg_thinking_time, total_time, mistakes_ratio, score, thinking_time_counter):
+    def save_to_highscores(self, nick, digits, avg_thinking_time, total_time, mistakes_ratio, score,
+                           thinking_time_counter):
+        file_path = os.path.join(self.base_path, 'highscores.txt')
         highscores_list = self.read_from_highscores()
 
         # Add a new result and sort the list descending by result.
@@ -111,18 +114,18 @@ class Helpers:
         highscores_list = sorted(highscores_list, key=lambda x: float(x[5]), reverse=True)[:10]
 
         # Save updated list to the file
-        with open('../highscores.txt', 'w') as file:
+        with open(file_path, 'w') as file:
             for nick, digits, avg_thinking_time, total_time, mistakes_ratio, score in highscores_list:
                 file.write(f"{nick},{digits},{avg_thinking_time},{total_time},{mistakes_ratio},{score}\n")
 
-    @staticmethod
-    def read_from_highscores():
-        if not os.path.exists('../highscores.txt'):
+    def read_from_highscores(self):
+        file_path = os.path.join(self.base_path, 'highscores.txt')
+        if not os.path.exists(file_path):
             return []  # Return an empty list if the file doesn't exist
 
         highscores_list = []
         try:
-            with open('../highscores.txt', 'r') as file:
+            with open(file_path, 'r') as file:
                 for line in file:
                     nick, digits, avg_thinking_time, total_time, mistakes_ratio, score = line.strip().split(',')
                     highscores_list.append((nick, digits, avg_thinking_time, total_time, mistakes_ratio, score))
